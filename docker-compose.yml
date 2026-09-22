@@ -1,0 +1,12 @@
+services:
+  meshtastic-llm-bot:
+    build: .
+    container_name: meshtastic-llm-bot
+    restart: unless-stopped
+    environment:
+      MESHTASTIC_HOST: "192.168.1.161"
+      MESHTASTIC_PORT: "4403"
+      CHANNEL_INDEX: "2"
+      CHANNEL_NAME: "search"
+      VIREONIX_URL: "https://vireonix.ai/v1/chat/completions"
+    network_mode: host
