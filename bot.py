@@ -44,6 +44,7 @@ def search_searxng(query: str) -> str:
             for r in results[:SEARCH_RESULTS_LIMIT]
             if r.get("content")
         ]
+        print(f"[SEARXNG] {contents}",flush=True)
         return "\n\n".join(contents)
     except Exception as e:
         print(f"[SEARXNG] Erreur: {e}", flush=True)
