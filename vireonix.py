@@ -30,4 +30,4 @@ def call_vireonix(prompt: str) -> str:
     data = response.json()
     result = data["choices"][0]["message"]["content"].strip()
     print(f"[VIREONIX] Résultat : {result}", flush=True)
-    return 
+    return result
