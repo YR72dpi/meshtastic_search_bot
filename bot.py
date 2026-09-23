@@ -164,10 +164,7 @@ def on_receive(packet, interface):
         )
         # Appel LLM
         answer = answer_question(question)
-        print(
-            f"[LLM] {answer}",
-            flush=True
-        )
+        
         # BROADCAST :
         # aucune destinationId => broadcast
         # channelIndex = channel réellement reçu

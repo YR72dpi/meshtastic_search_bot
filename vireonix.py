@@ -8,6 +8,7 @@ VIREONIX_URL = os.getenv(
 
 
 def call_vireonix(prompt: str) -> str:
+    print(f"[BOT] Appel : call_vireonix")
     """Envoie un prompt à Vireonix et renvoie sa réponse. Lève une exception si l'appel échoue."""
     response = requests.post(
         VIREONIX_URL,
