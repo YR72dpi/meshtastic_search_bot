@@ -97,7 +97,7 @@ Question : {question}
 
     except Exception as e:
         print(f"[VIREONIX] Erreur: {e}", flush=True)
-        return "Erreur lors de la requête LLM."
+        return f"LLM inaccéssible{context[:200]}"
 
 
 def on_receive(packet, interface):
@@ -172,6 +172,11 @@ def on_connection(interface, topic=pub.AUTO_TOPIC):
             flush=True
         )
 
+
+def on_connection_lost(interface, topic=pub.AUTO_TOPIC):
+    print("[MESHTASTIC] Connexion perdue.", flush=True)
+
+
 pub.subscribe(
     on_receive,
     "meshtastic.receive.text"
@@ -180,26 +185,60 @@ pub.subscribe(
     on_connection,
     "meshtastic.connection.established"
 )
-
-print(
-    f"Connexion à {MESHTASTIC_HOST}:{MESHTASTIC_PORT}...",
-    flush=True
+pub.subscribe(
+    on_connection_lost,
+    "meshtastic.connection.lost"
 )
 
-interface = TCPInterface(
-    hostname=MESHTASTIC_HOST,
-    portNumber=MESHTASTIC_PORT
-)
+RECONNECT_DELAY_SECONDS = int(os.getenv("RECONNECT_DELAY_SECONDS", "10"))
 
-print(
-    f"Bot démarré — écoute de "
-    f"[{SEARCH_CHANNEL_INDEX}] {SEARCH_CHANNEL_NAME}",
-    flush=True
-)
+
+def connect() -> TCPInterface:
+    print(
+        f"Connexion à {MESHTASTIC_HOST}:{MESHTASTIC_PORT}...",
+        flush=True
+    )
+    interface = TCPInterface(
+        hostname=MESHTASTIC_HOST,
+        portNumber=MESHTASTIC_PORT
+    )
+    print(
+        f"Bot démarré — écoute de "
+        f"[{SEARCH_CHANNEL_INDEX}] {SEARCH_CHANNEL_NAME}",
+        flush=True
+    )
+    return interface
+
+
+interface = connect()
 
 try:
     while True:
-        time.sleep(60)
+        try:
+            time.sleep(5)
+            # L'interface meshtastic ferme son thread de lecture en cas
+            # d'erreur réseau (pipe cassé, reset...) sans lever ici :
+            # on détecte donc la déconnexion via le thread du socket.
+            if not interface._is_connected():
+                raise ConnectionError("Connexion meshtastic perdue")
+        except Exception as e:
+            print(
+                f"[MESHTASTIC] Connexion perdue ({e}), "
+                f"reconnexion dans {RECONNECT_DELAY_SECONDS}s...",
+                flush=True
+            )
+            try:
+                interface.close()
+            except Exception:
+                pass
+            time.sleep(RECONNECT_DELAY_SECONDS)
+            try:
+                interface = connect()
+            except Exception as reconnect_error:
+                print(
+                    f"[MESHTASTIC] Échec de reconnexion: {reconnect_error}",
+                    flush=True
+                )
 
 except KeyboardInterrupt:
     print("Arrêt du bot.", flush=True)
