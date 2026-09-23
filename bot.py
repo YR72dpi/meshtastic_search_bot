@@ -74,7 +74,9 @@ Contexte local : {LOCAL_CONTEXT}
 Question : {question}
 """
     try:
-        return call_vireonix(prompt)
+        result = call_vireonix(prompt)
+        print(f"[VIREONIX] Résultat : {result}", flush=True)
+        return result
     except Exception as e:
         print(f"[VIREONIX] Erreur formulation requête: {e}", flush=True)
         return f"{question} {LOCAL_CONTEXT}".strip()
