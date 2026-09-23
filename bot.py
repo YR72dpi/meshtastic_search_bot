@@ -97,7 +97,11 @@ Question : {question}
 
     except Exception as e:
         print(f"[VIREONIX] Erreur: {e}", flush=True)
-        return f"LLM inaccéssible{context[:200]}"
+        excerpt = context[:200]
+        last_dot = excerpt.rfind(".")
+        if last_dot != -1:
+            excerpt = excerpt[:last_dot + 1]
+        return f"LLM inaccéssible{excerpt}"
 
 
 def on_receive(packet, interface):
