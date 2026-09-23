@@ -21,9 +21,20 @@ LOCAL_CONTEXT = os.getenv("LOCAL_CONTEXT", "")
 MAX_RESPONSE_LENGTH = 200
 SEARCH_RESULTS_LIMIT = 3
 
+def answer_question(question: str) -> str:
+    """Pipeline complet : question -> requête de recherche -> résultats -> réponse."""
+
+    print(f"[BOT] Appel : answer_question")
+
+    search_query = build_search_query(question)
+    context = search_searxng(search_query)
+    return generate_answer(question, context)
 
 def search_searxng(query: str) -> str:
     """Interroge SearXNG et renvoie le contenu concaténé des 3 meilleurs résultats."""
+
+    print(f"[BOT] Appel : search_searxng")
+
     try:
         response = requests.get(
             SEARXNG_URL,
@@ -49,19 +60,14 @@ def search_searxng(query: str) -> str:
         print(f"[SEARXNG] Erreur: {e}", flush=True)
         return ""
 
-
-def answer_question(question: str) -> str:
-    """Pipeline complet : question -> requête de recherche -> résultats -> réponse."""
-    search_query = build_search_query(question)
-    context = search_searxng(search_query)
-    return generate_answer(question, context)
-
-
 def build_search_query(question: str) -> str:
     """Demande au LLM de reformuler la question en requête de recherche web.
 
     Si le LLM ne répond pas, on retombe sur la question brute + le contexte local.
     """
+
+    print(f"[BOT] Appel : build_search_query")
+
     prompt = f"""Formule une requête de recherche web courte et efficace permettant \
 de trouver des informations pour répondre à la question suivante.
 
@@ -75,18 +81,19 @@ Question : {question}
 """
     try:
         result = call_vireonix(prompt)
-        print(f"[VIREONIX] Résultat : {result}", flush=True)
         return result
     except Exception as e:
         print(f"[VIREONIX] Erreur formulation requête: {e}", flush=True)
         return f"{question} {LOCAL_CONTEXT}".strip()
-
 
 def generate_answer(question: str, context: str) -> str:
     """Demande au LLM de répondre à la question à partir du contexte de recherche.
 
     Si le LLM ne répond pas, on renvoie un extrait du contexte à la place.
     """
+
+    print(f"[BOT] Appel : generate_answer")
+
     context_block = (
         f"Contexte (résultats de recherche) :\n{context}\n\n"
         if context
@@ -111,18 +118,21 @@ Question : {question}
         print(f"[VIREONIX] Erreur: {e}", flush=True)
         return f"LLM inaccéssible {excerpt_ending_with_period(context)}"
 
-
 def excerpt_ending_with_period(text: str, max_length: int = 200) -> str:
     """Tronque `text` à `max_length` caractères, en coupant au dernier point trouvé."""
+
+    print(f"[BOT] Appel : excerpt_ending_with_period")
+
     excerpt = text[:max_length]
     last_dot = excerpt.rfind(".")
     if last_dot != -1:
         excerpt = excerpt[:last_dot + 1]
     return excerpt
 
-
-
 def on_receive(packet, interface):
+
+    print(f"[BOT] Appel : on_receive")
+    
     try:
         decoded = packet.get("decoded", {})
         # Seulement les messages texte
@@ -173,8 +183,10 @@ def on_receive(packet, interface):
     except Exception as e:
         print(f"[BOT] Erreur: {e}", flush=True)
 
-
 def on_connection(interface, topic=pub.AUTO_TOPIC):
+
+    print(f"[BOT] Appel : on_connection")
+
     print(
         f"[MESHTASTIC] Connecté à "
         f"{MESHTASTIC_HOST}:{MESHTASTIC_PORT}",
@@ -194,14 +206,11 @@ def on_connection(interface, topic=pub.AUTO_TOPIC):
             flush=True
         )
 
-
 connection_lost = threading.Event()
-
 
 def on_connection_lost(interface, topic=pub.AUTO_TOPIC):
     print("[MESHTASTIC] Connexion perdue.", flush=True)
     connection_lost.set()
-
 
 pub.subscribe(
     on_receive,
@@ -217,7 +226,6 @@ pub.subscribe(
 )
 
 RECONNECT_DELAY_SECONDS = int(os.getenv("RECONNECT_DELAY_SECONDS", "10"))
-
 
 def connect() -> TCPInterface:
     print(
@@ -235,7 +243,6 @@ def connect() -> TCPInterface:
         flush=True
     )
     return interface
-
 
 interface = connect()
 
