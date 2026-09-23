@@ -101,7 +101,7 @@ Question : {question}
         last_dot = excerpt.rfind(".")
         if last_dot != -1:
             excerpt = excerpt[:last_dot + 1]
-        return f"LLM inaccéssible{excerpt}"
+        return f"LLM inaccéssible {excerpt}"
 
 
 def on_receive(packet, interface):
