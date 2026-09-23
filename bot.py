@@ -237,7 +237,8 @@ def connect() -> TCPInterface:
     )
     print(
         f"Bot démarré — écoute de "
-        f"[{SEARCH_CHANNEL_INDEX}] {SEARCH_CHANNEL_NAME}",
+        f"[{SEARCH_CHANNEL_INDEX}] {SEARCH_CHANNEL_NAME}\n"
+        f"Local Context : {LOCAL_CONTEXT}",
         flush=True
     )
     return interface
