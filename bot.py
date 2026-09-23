@@ -81,6 +81,7 @@ Question : {question}
 """
     try:
         result = call_vireonix(prompt)
+        print(f"[BOT] Result : {result}", flush=True)
         return result
     except Exception as e:
         print(f"[VIREONIX] Erreur formulation requête: {e}", flush=True)
@@ -164,7 +165,7 @@ def on_receive(packet, interface):
         )
         # Appel LLM
         answer = answer_question(question)
-        
+
         # BROADCAST :
         # aucune destinationId => broadcast
         # channelIndex = channel réellement reçu
