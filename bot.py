@@ -6,17 +6,14 @@ import requests
 from pubsub import pub
 from meshtastic.tcp_interface import TCPInterface
 
+from vireonix import call_vireonix
+
 
 MESHTASTIC_HOST = os.getenv("MESHTASTIC_HOST")
 MESHTASTIC_PORT = int(os.getenv("MESHTASTIC_PORT", "4403"))
 
 SEARCH_CHANNEL_INDEX = int(os.getenv("CHANNEL_INDEX"))
 SEARCH_CHANNEL_NAME = os.getenv("CHANNEL_NAME")
-
-VIREONIX_URL = os.getenv(
-    "VIREONIX_URL",
-    "https://vireonix.ai/v1/chat/completions"
-)
 
 SEARXNG_URL = os.getenv("SEARXNG_URL")
 LOCAL_CONTEXT = os.getenv("LOCAL_CONTEXT", "")
@@ -53,16 +50,44 @@ def search_searxng(query: str) -> str:
         return ""
 
 
-def ask_vireonix(question: str) -> str:
-    context = search_searxng(question)
+def answer_question(question: str) -> str:
+    """Pipeline complet : question -> requête de recherche -> résultats -> réponse."""
+    search_query = build_search_query(question)
+    context = search_searxng(search_query)
+    return generate_answer(question, context)
+
+
+def build_search_query(question: str) -> str:
+    """Demande au LLM de reformuler la question en requête de recherche web.
+
+    Si le LLM ne répond pas, on retombe sur la question brute + le contexte local.
+    """
+    prompt = f"""Formule une requête de recherche web courte et efficace permettant \
+de trouver des informations pour répondre à la question suivante.
+
+Règles :
+- Réponds uniquement avec la requête de recherche, sans explication.
+- Intègre le contexte local si pertinent.
+
+Contexte local : {LOCAL_CONTEXT}
+
+Question : {question}
+"""
+    try:
+        return call_vireonix(prompt)
+    except Exception as e:
+        print(f"[VIREONIX] Erreur formulation requête: {e}", flush=True)
+        return f"{question} {LOCAL_CONTEXT}".strip()
+
+
+def generate_answer(question: str, context: str) -> str:
+    """Demande au LLM de répondre à la question à partir du contexte de recherche.
+
+    Si le LLM ne répond pas, on renvoie un extrait du contexte à la place.
+    """
     context_block = (
         f"Contexte (résultats de recherche) :\n{context}\n\n"
         if context
-        else ""
-    )
-    local_context_block = (
-        f"Précisions locales : {LOCAL_CONTEXT}\n\n"
-        if LOCAL_CONTEXT
         else ""
     )
     prompt = f"""Réponds en français à la question suivante.
@@ -74,43 +99,25 @@ Règles :
 - N'invente aucune information.
 - Utilise le contexte fourni si présent si besoins.
 
-{local_context_block}
-
 {context_block}
 
 Question : {question}
 """
-    
     try:
-        response = requests.post(
-            VIREONIX_URL,
-            headers={
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "auto",
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ]
-            },
-            timeout=30
-        )
-
-        response.raise_for_status()
-        data = response.json()
-        answer = data["choices"][0]["message"]["content"].strip()
-        return answer[:MAX_RESPONSE_LENGTH]
-
+        return call_vireonix(prompt)[:MAX_RESPONSE_LENGTH]
     except Exception as e:
         print(f"[VIREONIX] Erreur: {e}", flush=True)
-        excerpt = context[:200]
-        last_dot = excerpt.rfind(".")
-        if last_dot != -1:
-            excerpt = excerpt[:last_dot + 1]
-        return f"LLM inaccéssible {excerpt}"
+        return f"LLM inaccéssible {excerpt_ending_with_period(context)}"
+
+
+def excerpt_ending_with_period(text: str, max_length: int = 200) -> str:
+    """Tronque `text` à `max_length` caractères, en coupant au dernier point trouvé."""
+    excerpt = text[:max_length]
+    last_dot = excerpt.rfind(".")
+    if last_dot != -1:
+        excerpt = excerpt[:last_dot + 1]
+    return excerpt
+
 
 
 def on_receive(packet, interface):
@@ -144,7 +151,7 @@ def on_receive(packet, interface):
             flush=True
         )
         # Appel LLM
-        answer = ask_vireonix(question)
+        answer = answer_question(question)
         print(
             f"[LLM] {answer}",
             flush=True
