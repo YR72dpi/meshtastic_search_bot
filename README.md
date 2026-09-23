@@ -43,3 +43,23 @@ Pour reconstruire le bot après une modification du code :
 ```bash
 docker compose up -d --build
 ```
+
+## Flow de recherche
+
+```mermaid
+flowchart TD
+    A["📡 Message Meshtastic"] --> B{"Channel = search ?"}
+    B -- Non --> Z["❌ Ignorer"]
+    B -- Oui --> C["❓ Question"]
+
+    C --> D["🤖 Vireonix<br/>Construire la requête"]
+    D --> E["🔎 SearXNG<br/>Recherche Web"]
+
+    E --> F["📄 Top 3 résultats"]
+    F --> G["🤖 Vireonix<br/>Générer la réponse"]
+
+    G --> H["✂️ Limite à 200 caractères"]
+    H --> I["📡 Réponse Meshtastic"]
+
+    D -. "Contexte local<br/>+ heure locale" .-> D
+```
