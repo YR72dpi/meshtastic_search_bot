@@ -69,15 +69,13 @@ def build_search_query(question: str) -> str:
     print(f"[BOT] Appel : build_search_query")
 
     prompt = f"""Formule une requête de recherche web courte et efficace permettant \
-de trouver des informations pour répondre à la question suivante.
+de trouver des informations pour répondre à la question suivante : {question}.
 
 Règles :
 - Réponds uniquement avec la requête de recherche, sans explication.
 - Intègre le contexte local si pertinent.
 
 Contexte local : {LOCAL_CONTEXT}
-
-Question : {question}
 """
     try:
         result = call_vireonix(prompt)
