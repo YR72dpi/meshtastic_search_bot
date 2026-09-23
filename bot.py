@@ -3,9 +3,9 @@ import threading
 import time
 import requests
 
+from datetime import datetime
 from pubsub import pub
 from meshtastic.tcp_interface import TCPInterface
-
 from vireonix import call_vireonix
 
 
@@ -68,7 +68,9 @@ def build_search_query(question: str) -> str:
 
     print(f"[BOT] Appel : build_search_query")
 
-    prompt = f"""Formule une requête de recherche web courte et efficace permettant \
+    current_time = datetime.now().strftime("%H:%M")
+
+    prompt = f"""Formule une requête de recherche web efficace permettant 
 de trouver des informations pour répondre à la question suivante : {question}.
 
 Règles :
@@ -76,6 +78,7 @@ Règles :
 - Intègre le contexte local si pertinent.
 
 Contexte local : {LOCAL_CONTEXT}
+Heure locale : {current_time}
 """
     try:
         result = call_vireonix(prompt)
