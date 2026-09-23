@@ -23,7 +23,7 @@ def call_vireonix(prompt: str) -> str:
                 }
             ]
         },
-        timeout=30
+        timeout=60
     )
     response.raise_for_status()
     data = response.json()
