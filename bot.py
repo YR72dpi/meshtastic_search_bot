@@ -19,6 +19,7 @@ VIREONIX_URL = os.getenv(
 )
 
 SEARXNG_URL = os.getenv("SEARXNG_URL")
+LOCAL_CONTEXT = os.getenv("LOCAL_CONTEXT", "")
 
 MAX_RESPONSE_LENGTH = 200
 SEARCH_RESULTS_LIMIT = 3
@@ -59,6 +60,11 @@ def ask_vireonix(question: str) -> str:
         if context
         else ""
     )
+    local_context_block = (
+        f"Précisions locales : {LOCAL_CONTEXT}\n\n"
+        if LOCAL_CONTEXT
+        else ""
+    )
     prompt = f"""Réponds en français à la question suivante.
 
 Règles :
@@ -67,6 +73,8 @@ Règles :
 - Maximum 150 caractères.
 - N'invente aucune information.
 - Utilise le contexte fourni si présent si besoins.
+
+{local_context_block}
 
 {context_block}
 
