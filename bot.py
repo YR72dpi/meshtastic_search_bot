@@ -1,4 +1,5 @@
 import os
+import threading
 import time
 import requests
 
@@ -177,8 +178,12 @@ def on_connection(interface, topic=pub.AUTO_TOPIC):
         )
 
 
+connection_lost = threading.Event()
+
+
 def on_connection_lost(interface, topic=pub.AUTO_TOPIC):
     print("[MESHTASTIC] Connexion perdue.", flush=True)
+    connection_lost.set()
 
 
 pub.subscribe(
@@ -202,6 +207,7 @@ def connect() -> TCPInterface:
         f"Connexion à {MESHTASTIC_HOST}:{MESHTASTIC_PORT}...",
         flush=True
     )
+    connection_lost.clear()
     interface = TCPInterface(
         hostname=MESHTASTIC_HOST,
         portNumber=MESHTASTIC_PORT
@@ -222,8 +228,8 @@ try:
             time.sleep(5)
             # L'interface meshtastic ferme son thread de lecture en cas
             # d'erreur réseau (pipe cassé, reset...) sans lever ici :
-            # on détecte donc la déconnexion via le thread du socket.
-            if not interface._is_connected():
+            # on détecte donc la déconnexion via le callback pubsub.
+            if connection_lost.is_set():
                 raise ConnectionError("Connexion meshtastic perdue")
         except Exception as e:
             print(
