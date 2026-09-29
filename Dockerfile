@@ -9,4 +9,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY bot.py .
 COPY vireonix.py .
 
-CMD ["python", "-u", "bot.py"]
+CMD ["python", "-u", "main.py"]

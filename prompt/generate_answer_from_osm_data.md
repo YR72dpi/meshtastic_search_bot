@@ -1,4 +1,4 @@
-Réponds en français à la question suivante.
+Réponds en français à la question suivante : [question]
 
 Règles :
 - Réponds directement à la question.
@@ -8,9 +8,6 @@ Règles :
 - Si le contexte ne contient pas l'information demandée (horaires, adresse...), dis que tu ne l'as pas trouvée.
 - Les horaires OSM utilisent les abréviations Mo Tu We Th Fr Sa Su, PH = jour férié, off = fermé.
 
-CONTEXT :
-Nous sommes [DATE], il est [HEURE].
-Donnée OpenStreetMap : [CONTEXT_BLOC]
+Context : Nous sommes le [day] [date], il est [time], à [city].
 
-Question : 
-[QUESTION]
+Donnée OpenStreetMap : [context]

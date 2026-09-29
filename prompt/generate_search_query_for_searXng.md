@@ -1,9 +1,8 @@
 Formule une requête de recherche web efficace permettant 
-de trouver des informations pour répondre à la question suivante : [QUESTION].
+de trouver des informations pour répondre à la question suivante : [question].
 
 Règles :
 - Réponds uniquement avec la requête de recherche, sans explication.
 - Intègre le contexte local si pertinent.
 
-Contexte local : [LOCAL_CONTEXT]
-Heure locale : [CURRENT_TIME]
+Context : Nous sommes le [day] [date], il est [time], à [city].

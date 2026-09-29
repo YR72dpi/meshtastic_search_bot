@@ -9,7 +9,7 @@
 
 /horaire & /adresse
 - extraire le nom exacte
-    - searnxg : recherche du texte où le nom apparait
+    - searxng : recherche du texte où le nom apparait
         - nom + city
     - llm : isole le nom
 
@@ -21,12 +21,12 @@ Si nom isolé
 - formulation de la reponse avec llm (données le json de osm)
 
 general
-    llm generate search + searnxg + genere la reponse
+    llm generate search + searxng + genere la reponse
 
 # orga
     fichier main.py
     fichier vireonix
     fichier osm
-    fichier searnxg
+    fichier searxng
     fichier de prompt
     env : Nom de la ville
