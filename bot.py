@@ -21,13 +21,95 @@ LOCAL_CONTEXT = os.getenv("LOCAL_CONTEXT", "")
 MAX_RESPONSE_LENGTH = 200
 SEARCH_RESULTS_LIMIT = 3
 
+NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
+# La politique d'usage de Nominatim impose un User-Agent identifiable
+OSM_USER_AGENT = "meshtastic-search-bot/1.0 (ton@email.fr)"
+
+PLACE_KEYWORDS = (
+    "horaire", "ouvert", "ouvre", "ferme", "fermé", "fermeture",
+    "adresse", "téléphone", "telephone", "site web", "à quelle heure",
+)
+
+JOURS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
+
+def is_place_question(question: str) -> bool:
+    q = question.lower()
+    return any(k in q for k in PLACE_KEYWORDS)
+
+def search_osm(question: str) -> str:
+    """Cherche le lieu dans OpenStreetMap et renvoie un contexte texte (horaires, adresse...)."""
+    print("[BOT] Appel : search_osm", flush=True)
+
+    name = extract_place_name(question)
+    if not name:
+        return ""
+
+    try:
+        response = requests.get(
+            NOMINATIM_URL,
+            params={
+                "q": f"{name} {LOCAL_CONTEXT}".strip(),
+                "format": "jsonv2",
+                "extratags": 1,
+                "limit": 1,
+            },
+            headers={"User-Agent": OSM_USER_AGENT},
+            timeout=10,
+        )
+        response.raise_for_status()
+        results = response.json()
+        if not results:
+            return ""
+
+        place = results[0]
+        tags = place.get("extratags") or {}
+
+        lines = [f"Lieu trouvé dans OpenStreetMap : {place.get('display_name', name)}"]
+        hours = tags.get("opening_hours")
+        lines.append(
+            f"Horaires (format OSM) : {hours}" if hours
+            else "Horaires : non renseignés dans OpenStreetMap."
+        )
+        phone = tags.get("phone") or tags.get("contact:phone")
+        if phone:
+            lines.append(f"Téléphone : {phone}")
+        website = tags.get("website") or tags.get("contact:website")
+        if website:
+            lines.append(f"Site : {website}")
+
+        context = "\n".join(lines)
+        print(f"[OSM] {context}", flush=True)
+        return context
+    except Exception as e:
+        print(f"[OSM] Erreur: {e}", flush=True)
+        return ""
+
+def extract_place_name(question: str) -> str:
+    """Demande au LLM d'extraire uniquement le nom du lieu (ou NONE)."""
+    prompt = f"""Extrais le nom de l'établissement ou du lieu mentionné dans cette question : {question}
+
+Règles :
+- Réponds uniquement avec le nom du lieu, sans explication.
+- S'il n'y a aucun lieu précis, réponds exactement : NONE
+"""
+    try:
+        name = call_vireonix(prompt).strip().strip('"')
+        return "" if name.upper() == "NONE" else name
+    except Exception as e:
+        print(f"[OSM] Erreur extraction du lieu: {e}", flush=True)
+        return ""
+
 def answer_question(question: str) -> str:
-    """Pipeline complet : question -> requête de recherche -> résultats -> réponse."""
+    print("[BOT] Appel : answer_question")
 
-    print(f"[BOT] Appel : answer_question")
+    context = ""
+    if is_place_question(question):
+        context = search_osm(question)
 
-    search_query = build_search_query(question)
-    context = search_searxng(search_query)
+    if not context:
+        search_query = build_search_query(question)
+        context = search_searxng(search_query)
+
     return generate_answer(question, context)
 
 def search_searxng(query: str) -> str:
@@ -101,6 +183,8 @@ def generate_answer(question: str, context: str) -> str:
         if context
         else ""
     )
+    
+    now = datetime.now()
     prompt = f"""Réponds en français à la question suivante.
 
 Règles :
@@ -108,7 +192,10 @@ Règles :
 - Sois précis et concis.
 - Maximum 150 caractères.
 - N'invente aucune information.
-- Utilise le contexte fourni si présent si besoins.
+- Si le contexte ne contient pas l'information demandée (horaires, adresse...), dis que tu ne l'as pas trouvée.
+- Les horaires OSM utilisent les abréviations Mo Tu We Th Fr Sa Su, PH = jour férié, off = fermé.
+
+Nous sommes {JOURS[now.weekday()]}, il est {now.strftime("%H:%M")}.
 
 {context_block}
 
