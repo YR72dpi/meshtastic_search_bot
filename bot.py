@@ -183,7 +183,7 @@ def generate_answer(question: str, context: str) -> str:
         if context
         else ""
     )
-    
+
     now = datetime.now()
     prompt = f"""Réponds en français à la question suivante.
 
@@ -194,6 +194,7 @@ Règles :
 - N'invente aucune information.
 - Si le contexte ne contient pas l'information demandée (horaires, adresse...), dis que tu ne l'as pas trouvée.
 - Les horaires OSM utilisent les abréviations Mo Tu We Th Fr Sa Su, PH = jour férié, off = fermé.
+- Si plusieurs sources donnent des informations contradictoires, ne tranche pas : dis que les sources divergent et cite les deux.
 
 Nous sommes {JOURS[now.weekday()]}, il est {now.strftime("%H:%M")}.
 
