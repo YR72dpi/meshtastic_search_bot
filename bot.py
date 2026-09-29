@@ -159,24 +159,36 @@ def on_receive(packet, interface):
                 flush=True
             )
             return
+        
         sender = packet.get("fromId", "unknown")
+        # ID du message auquel on répond
+        original_packet_id = packet.get("id")
+
         print(
             f"[SEARCH] Question de {sender}: {question}",
             flush=True
         )
-        # Appel LLM
+
         answer = answer_question(question)
 
-        # BROADCAST :
-        # aucune destinationId => broadcast
-        # channelIndex = channel réellement reçu
-        interface.sendText(
-            answer,
-            channelIndex=received_channel
-        )
+        try:
+            interface.sendText(
+                answer,
+                channelIndex=received_channel,
+                replyId=original_packet_id
+            )
+        except TypeError:
+            # Ancienne version de la lib sans replyId : envoi classique
+            print("[TX] replyId non supporté, envoi sans réponse liée", flush=True)
+            interface.sendText(
+                answer,
+                channelIndex=received_channel
+            )
+
         print(
             f"[TX] Réponse envoyée sur "
-            f"channel={received_channel} ({SEARCH_CHANNEL_NAME})",
+            f"channel={received_channel} ({SEARCH_CHANNEL_NAME}) "
+            f"en réponse à l'id {original_packet_id}",
             flush=True
         )
     except Exception as e:
