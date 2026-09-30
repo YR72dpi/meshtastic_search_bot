@@ -3,7 +3,7 @@ import os
 from tool.vireonix import call_vireonix
 from tool.searXng import search_searxng
 from tool.OpenStreetMap import search_place_data
-from tool.utils import load_prompt, excerpt_ending_with_period, MAX_RESPONSE_LENGTH
+from tool.utils import load_prompt, excerpt_ending_with_period
 
 CITY = os.getenv("CITY", "Paris, France")
 
@@ -48,7 +48,7 @@ def generate_answer(question: str, context: str) -> str:
         context=context,
     )
     try:
-        return call_vireonix(prompt)[:MAX_RESPONSE_LENGTH]
+        return call_vireonix(prompt)[:200]
     except Exception as e:
         print(f"[VIREONIX] Erreur: {e}", flush=True)
         return f"LLM inaccessible. {excerpt_ending_with_period(context)}"

@@ -4,17 +4,16 @@ from zoneinfo import ZoneInfo
 import os
 from datetime import datetime
 
-MAX_RESPONSE_LENGTH = 150
 PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompt"
 TIMEZONE = ZoneInfo(os.getenv("TZ_NAME", "Europe/Paris"))
 
 _PLACEHOLDER = re.compile(r"\[(\w+)\]")
 JOURS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
 
-def excerpt_ending_with_period(text: str, max_length: int = MAX_RESPONSE_LENGTH) -> str:
+def excerpt_ending_with_period(text: str) -> str:
     print(f"[BOT] Appel : excerpt_ending_with_period")
 
-    excerpt = text[:max_length]
+    excerpt = text[:200]
     last_dot = excerpt.rfind(".")
     if last_dot != -1:
         excerpt = excerpt[:last_dot + 1]

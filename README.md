@@ -21,7 +21,7 @@ The bot listens on a dedicated channel and offers two data sources:
 * 🗺️ Structured place info from OpenStreetMap (name, address, GPS, phone, opening hours)
 * 🏙️ Configurable local city added to searches
 * 🕐 Local date and time available in prompts
-* ✂️ Answers limited to 150 characters
+* ✂️ Answers limited to 200 characters
 * ↩️ Replies are linked to the original message (`replyId`) when the library supports it
 * 🔄 Automatic reconnection after a connection loss
 * 🐳 Fully Docker Compose based
@@ -97,7 +97,7 @@ flowchart TD
     B --> C["🔎 SearXNG<br/>Web search"]
     C --> D["📄 Top results"]
     D --> E["🤖 Vireonix<br/>Generate short answer"]
-    E --> F["✂️ Limit to 150 characters"]
+    E --> F["✂️ Limit to 200 characters"]
     F --> G["📡 Meshtastic reply"]
 ```
 
@@ -244,7 +244,7 @@ The bot only handles **text messages** received on the channel set by `CHANNEL_I
 
 1. **Query generation:** Vireonix receives the question, the city and the current date/time, and produces a concise search query.
 2. **Search:** the query is sent to SearXNG and the top results are used as context.
-3. **Answer:** Vireonix answers in French, directly and concisely, without inventing information. The bot truncates the result to 150 characters.
+3. **Answer:** Vireonix answers in French, directly and concisely, without inventing information. The bot truncates the result to 200 characters.
 
 If Vireonix is unreachable, the bot falls back to the raw question for the search, or returns an excerpt of the results.
 
