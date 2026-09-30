@@ -33,7 +33,7 @@ def time_variables() -> dict:
 def load_prompt(name: str, **values) -> str:
     print(f"[BOT] Appel : load_prompt")
 
-    text = (PROMPTS_DIR / f"{name}.md").read_text(encoding="utf-8")
+    text = (Path(PROMPTS_DIR) / f"{name}.md").read_text(encoding="utf-8")
     variables = {
         "city": os.getenv("CITY"), 
         **time_variables(), 
