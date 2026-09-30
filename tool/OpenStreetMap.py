@@ -28,7 +28,8 @@ def search_place_data(name: str) -> str:
             return ""
 
         place = results[0]
-        
+
+        print(f"[BOT] OSM DATA : {place}", flush=True)
         return place
     except Exception as e:
         print(f"[OSM] Erreur: {e}", flush=True)
