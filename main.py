@@ -130,7 +130,7 @@ def connect() -> TCPInterface:
     print(
         f"Bot démarré — écoute de "
         f"[{SEARCH_CHANNEL_INDEX}] {SEARCH_CHANNEL_NAME}\n"
-        f"[CONFIG] Ville : {CITY}",
+        f"[CONFIG] Ville : {CITY}\n",
         flush=True
     )
     return interface
