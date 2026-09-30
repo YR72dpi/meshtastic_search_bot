@@ -146,7 +146,7 @@ def osm_lookup(place_name_user: str) -> str:
 
 def help_message() -> str:
     return (
-        f"🏙️ Ville configurée : {CITY}"
+        f"🏙️ Ville configurée : {CITY}\n\n"
         "🤖 Commandes :\n"
         "🗺️ /osm [lieu] : infos OpenStreetMap\n"
         "🔎 /search [question] : recherche web\n"
