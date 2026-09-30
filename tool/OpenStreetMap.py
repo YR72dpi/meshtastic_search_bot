@@ -1,7 +1,7 @@
 import requests
 import os 
 
-CITY = os.getenv("CITY")
+CITY = os.getenv("CITY", "Paris")
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 # La politique d'usage de Nominatim impose un User-Agent identifiable
 OSM_USER_AGENT = "meshtastic-search-bot/1.0 (ton@email.fr)"

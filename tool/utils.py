@@ -2,10 +2,10 @@ import re
 from pathlib import Path
 from zoneinfo import ZoneInfo
 import os
-import datetime
+from datetime import datetime
 
 MAX_RESPONSE_LENGTH = 150
-PROMPTS_DIR = "./prompt"
+PROMPTS_DIR = Path(__file__).parent / "prompt"
 TIMEZONE = ZoneInfo(os.getenv("TZ_NAME", "Europe/Paris"))
 
 _PLACEHOLDER = re.compile(r"\[(\w+)\]")
@@ -33,9 +33,9 @@ def time_variables() -> dict:
 def load_prompt(name: str, **values) -> str:
     print(f"[BOT] Appel : load_prompt")
 
-    text = (Path(PROMPTS_DIR) / f"{name}.md").read_text(encoding="utf-8")
+    text = (PROMPTS_DIR / f"{name}.md").read_text(encoding="utf-8")
     variables = {
-        "city": os.getenv("CITY"), 
+        "city": os.getenv("CITY", "Paris"), 
         **time_variables(), 
         **values
     }
