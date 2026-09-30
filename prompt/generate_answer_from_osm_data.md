@@ -1,13 +1,33 @@
-Réponds en français à la question suivante : [question]
+Réponds en français à la question suivante :
 
-Règles :
-- Réponds directement à la question.
-- Sois précis et concis.
-- Maximum 150 caractères.
-- N'invente aucune information.
-- Si le contexte ne contient pas l'information demandée (horaires, adresse...), dis que tu ne l'as pas trouvée.
-- Les horaires OSM utilisent les abréviations Mo Tu We Th Fr Sa Su, PH = jour férié, off = fermé.
+**Question :** [question]
 
-Context : Nous sommes le [day] [date], il est [time], à [city].
+**Contexte actuel :**
 
-Donnée OpenStreetMap : [context]
+* Jour : [day]
+* Date : [date]
+* Heure : [time]
+* Lieu : [city]
+
+**Données OpenStreetMap :**
+[context]
+
+Règles strictes :
+
+* Réponds directement à la question, sans introduction ni explication.
+* Utilise uniquement les informations présentes dans les données OpenStreetMap.
+* N'invente aucune information et ne complète pas les données par des suppositions.
+* Sois précis, factuel et concis.
+* Maximum **150 caractères**, espaces compris.
+* Si l'information demandée n'est pas présente dans les données, réponds : « Information non trouvée dans OpenStreetMap. »
+* Si plusieurs informations sont contradictoires, indique-le sans choisir arbitrairement.
+* Pour déterminer si un lieu est ouvert, utilise la date et l'heure actuelles uniquement si des horaires sont fournis.
+* Les horaires OSM utilisent :
+
+  * `Mo Tu We Th Fr Sa Su` = lundi à dimanche
+  * `PH` = jours fériés
+  * `off` = fermé
+* Respecte les horaires exceptionnels et les périodes spécifiées lorsqu'elles sont présentes.
+* Ne considère pas `PH` comme applicable sauf si la date actuelle est effectivement un jour férié.
+* Si les horaires sont insuffisants pour déterminer si le lieu est ouvert, indique-le plutôt que de supposer.
+* Réponds uniquement avec la réponse finale.
