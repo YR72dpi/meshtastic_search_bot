@@ -87,11 +87,13 @@ def answer_question(question: str) -> str:
         clean_place_name = extract_place_name(search_place)
 
         if not clean_place_name:
+            print("[BOT] No clean_place_name")
             return basic_search("Horaire " + place_name_user + ", " + CITY)
 
         osmData = search_place_data(clean_place_name + ", " + CITY)
 
         if not osmData:
+            print("[BOT] No osmData")
             return basic_search("Horaire " + clean_place_name + ", " + CITY)
 
         answer = generate_answer("Horaire " + clean_place_name, osmData, "osm")
@@ -105,11 +107,13 @@ def answer_question(question: str) -> str:
         clean_place_name = extract_place_name(search_place)
 
         if not clean_place_name:
+            print("[BOT] No clean_place_name")
             return basic_search("Adresse (si possible coordonnée GPS) " + place_name_user + ", " + CITY)
 
         osmData = search_place_data(clean_place_name + ", " + CITY)
 
         if not osmData :
+            print("[BOT] No osmData")
             return basic_search("Adresse (si possible coordonnée GPS) " + clean_place_name + ", " + CITY)
 
         answer = generate_answer("Adresse (si possible coordonnée GPS) " + clean_place_name, osmData, "osm")
