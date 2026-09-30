@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 
 MAX_RESPONSE_LENGTH = 150
-PROMPTS_DIR = Path(__file__).parent / "prompt"
+PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompt"
 TIMEZONE = ZoneInfo(os.getenv("TZ_NAME", "Europe/Paris"))
 
 _PLACEHOLDER = re.compile(r"\[(\w+)\]")
