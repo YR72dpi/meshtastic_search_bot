@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY main.py .
 COPY bot.py .
 
-COPY ./prompt .
-COPY ./tool .
+COPY prompt/ ./prompt
+COPY tool/ ./tool
 
 CMD ["python", "-u", "main.py"]
