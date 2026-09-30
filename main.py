@@ -9,6 +9,7 @@ MESHTASTIC_HOST = os.getenv("MESHTASTIC_HOST")
 MESHTASTIC_PORT = int(os.getenv("MESHTASTIC_PORT", "4403"))
 SEARCH_CHANNEL_INDEX = int(os.getenv("CHANNEL_INDEX"))
 SEARCH_CHANNEL_NAME = os.getenv("CHANNEL_NAME")
+CITY = os.getenv("CITY", "Paris, France")
 
 def on_receive(packet, interface):
     print(f"[BOT] Appel : on_receive")
