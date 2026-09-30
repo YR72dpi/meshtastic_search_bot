@@ -12,7 +12,7 @@ SEARCH_CHANNEL_NAME = os.getenv("CHANNEL_NAME")
 CITY = os.getenv("CITY", "Paris, France")
 
 def on_receive(packet, interface):
-    print(f"[BOT] Appel : on_receive")
+    print(f"\n\n\n[BOT] Appel : on_receive")
     
     try:
         decoded = packet.get("decoded", {})
