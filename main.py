@@ -1,3 +1,4 @@
+import threading
 import time
 from pubsub import pub
 from meshtastic.tcp_interface import TCPInterface
