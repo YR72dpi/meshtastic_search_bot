@@ -43,7 +43,7 @@ def generate_answer(question: str, context: str) -> str:
     print("[BOT] Appel : generate_answer", flush=True)
 
     prompt = load_prompt(
-        "generate_answer_from_searxng",
+        "generate_answer_from_searnxg",
         question=question,
         context=context,
     )
