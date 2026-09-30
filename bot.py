@@ -6,8 +6,6 @@ from tool.OpenStreetMap import search_place_data
 from tool.utils import load_prompt, excerpt_ending_with_period, MAX_RESPONSE_LENGTH
 
 CITY = os.getenv("CITY", "Paris, France")
-GITHUB_URL = os.getenv("GITHUB_URL", "https://github.com/<user>/<repo>")
-
 
 # ---------------------------------------------------------------------------
 # Étapes LLM (Vireonix)
