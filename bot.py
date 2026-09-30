@@ -184,8 +184,4 @@ def answer_question(question: str) -> str:
     if command == "/search":
         return basic_search(args) if args else "❌ Usage : /search [question]"
 
-    if command:
-        return "❓ Commande inconnue. Tape /help"
-
-    # Message sans commande : recherche web par défaut
-    return basic_search(question)
+    return "❓ Commande inconnue. Tape /help"
