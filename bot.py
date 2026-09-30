@@ -44,7 +44,7 @@ def generate_answer(question: str, context: str, dataSrc = "searxng") -> str:
         dataSrc = "searxng"
 
     if dataSrc == "osm" :
-        promptPattern = "generate_answer_from_osm"
+        promptPattern = "generate_answer_from_osm_data"
     
     if dataSrc == "searxng":
         promptPattern = "generate_answer_from_searxng"
