@@ -121,21 +121,34 @@ def format_osm_message(osm: dict) -> str:
 def osm_lookup(place_name_user: str) -> str:
     print("[BOT] Appel : osm_lookup", flush=True)
 
-    # 1. Trouver le vrai nom du lieu via SearXNG + LLM
-    search_result = search_searxng(f"{place_name_user}, {CITY}")
-    clean_place_name = extract_place_name(search_result)
-    if not clean_place_name:
-        print("[BOT] No clean_place_name, utilisation du nom saisi", flush=True)
-        clean_place_name = place_name_user
-
-    # 2. Interroger OpenStreetMap
-    osm_data = search_place_data(f"{clean_place_name}, {CITY}")
+    # Première recherche OSM
+    osm_data = search_place_data(f"{place_name_user}, {CITY}")
     if isinstance(osm_data, list):
         osm_data = osm_data[0] if osm_data else None
+    if osm_data:
+        return format_osm_message(osm_data)
 
+    # Recherche approfondie
+    print("[BOT] Appel : osm_lookup (deep search)", flush=True)
+
+    search_result = search_searxng(f"{place_name_user}, {CITY}")
+    clean_place_name = extract_place_name(search_result)
+
+    if not clean_place_name:
+        print("[BOT] No clean_place_name, utilisation du nom saisi",flush=True)
+        clean_place_name = place_name_user
+
+    # Deuxième recherche OSM
+    osm_data = search_place_data(f"{clean_place_name}, {CITY}")
+
+    if isinstance(osm_data, list):
+        osm_data = osm_data[0] if osm_data else None
     if not osm_data:
         print("[BOT] No osmData", flush=True)
-        return f"❌ Lieu introuvable sur OSM : {clean_place_name}\nEssaie /search {place_name_user}"
+        return (
+            f"❌ Lieu introuvable sur OSM : {clean_place_name}\n"
+            f"Essaie /search {place_name_user}"
+        )
 
     return format_osm_message(osm_data)
 
