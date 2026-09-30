@@ -1,25 +1,69 @@
 # 📡 Meshtastic Search Bot
 
-A lightweight **Meshtastic Internet search bot** that allows nodes on a Meshtastic network to ask questions and receive concise answers based on live web search results.
+A lightweight **Meshtastic Internet assistant**. Nodes on a Meshtastic network can ask questions or look up places and receive short answers suited to LoRa.
 
-The bot listens on a dedicated Meshtastic channel, uses **Vireonix** to build an optimized search query, searches the web through **SearXNG**, then uses Vireonix again to generate a short answer suitable for transmission over LoRa.
+The bot listens on a dedicated channel and offers two data sources:
+
+* 🔎 **Web search**: [Vireonix](#-requirements) builds an optimized query, [SearXNG](https://github.com/searxng/searxng) searches the web, Vireonix summarizes the results.
+* 🗺️ **OpenStreetMap**: name, address and GPS position of a place, through Nominatim.
 
 > 🌐 **Meshtastic → LLM → SearXNG → LLM → Meshtastic**
+> 🗺️ **Meshtastic → SearXNG → LLM → OpenStreetMap → Meshtastic**
 
 ---
 
 ## ✨ Features
 
-* 📡 Listen to a dedicated Meshtastic channel
-* 🔎 Search the web through SearXNG
-* 🤖 Use Vireonix for query generation and answer generation
-* 📍 Include a configurable local context in searches
-* 🕐 Include the local time when generating search queries
-* 📄 Use the top 3 SearXNG results as context
-* ✂️ Limit responses to 200 characters
+* 📡 Listens to a dedicated Meshtastic channel
+* 💬 Simple commands: `/help`, `/osm`, `/search`, `/github`
+* 🔎 Web search through a self-hostable SearXNG instance
+* 🤖 Vireonix for query generation, place-name extraction and answer synthesis
+* 🗺️ Structured place info from OpenStreetMap (name, address, GPS, phone, opening hours)
+* 🏙️ Configurable local city added to searches
+* 🕐 Local date and time available in prompts
+* ✂️ Answers limited to 150 characters
+* ↩️ Replies are linked to the original message (`replyId`) when the library supports it
+* 🔄 Automatic reconnection after a connection loss
 * 🐳 Fully Docker Compose based
-* 🔄 Automatically reconnect to Meshtastic after connection loss
-* 🔐 No external search engine is required — SearXNG can run locally
+
+---
+
+## 💬 Commands
+
+| Command | Description | Example |
+| --- | --- | --- |
+| `/help` | 📖 Lists the commands and the configured city | `/help` |
+| `/osm [place]` | 🗺️ OpenStreetMap info: name, address, GPS | `/osm Moby's café` |
+| `/search [question]` | 🔎 Web search summarized by the LLM | `/search latest Raspberry Pi model` |
+| `/github` | 🐙 Link to the repository | `/github` |
+| *any other text* | 🔎 Handled like `/search` | `weather in Rouen today?` |
+
+An unknown command returns `❓ Commande inconnue. Tape /help`.
+
+### Example: `/osm`
+
+```text
+/osm Moby's café
+```
+
+```text
+📍 Moby's café
+🏠 38, Boulevard de l'Yser, 76000
+🧭 49.44860, 1.09928
+📞 +33 2 32 10 66 56
+```
+
+The `🕒` (opening hours) and `📞` (phone) lines only appear when the data exists in OpenStreetMap.
+
+### Example: `/search`
+
+```text
+/search latest Raspberry Pi 5 model
+```
+
+```text
+Le Raspberry Pi 5 existe notamment en versions 2, 4, 8 et 16 Go de RAM.
+```
 
 ---
 
@@ -28,58 +72,60 @@ The bot listens on a dedicated Meshtastic channel, uses **Vireonix** to build an
 ```mermaid
 flowchart LR
     M["📡 Meshtastic Node"]
-    B["🤖 Search Bot"]
-    V1["🧠 Vireonix<br/>Query generation"]
+    B["🤖 Bot"]
+    V["🧠 Vireonix"]
     S["🔎 SearXNG"]
-    V2["🧠 Vireonix<br/>Answer generation"]
+    O["🗺️ OpenStreetMap<br/>(Nominatim)"]
 
-    M -->|"Question"| B
-    B --> V1
-    V1 -->|"Search query"| S
-    S -->|"Top 3 results"| V2
-    V2 -->|"≤ 200 characters"| B
+    M -->|"Message"| B
+    B <--> V
+    B <--> S
+    B <--> O
     B -->|"Answer"| M
 ```
 
 ---
 
-## 🔄 Search Flow
+## 🔄 Flows
+
+### `/search`
 
 ```mermaid
 flowchart TD
+    A["📡 Message on search channel"] --> B["🤖 Vireonix<br/>Build search query"]
+    B -.-> L["🏙️ City<br/>🕐 Date and time"]
+    B --> C["🔎 SearXNG<br/>Web search"]
+    C --> D["📄 Top results"]
+    D --> E["🤖 Vireonix<br/>Generate short answer"]
+    E --> F["✂️ Limit to 150 characters"]
+    F --> G["📡 Meshtastic reply"]
+```
 
-    A["📡 Meshtastic message"] --> B{"Channel = search?"}
+### `/osm`
 
-    B -- "No" --> Z["❌ Ignore"]
-    B -- "Yes" --> C["❓ Question"]
-
-    C --> D["🤖 Vireonix<br/>Build search query"]
-
-    D -.-> L["📍 Local context<br/>🕐 Local time"]
-
-    D --> E["🔎 SearXNG<br/>Web search"]
-
-    E --> F["📄 Top 3 results"]
-
-    F --> G["🤖 Vireonix<br/>Generate answer"]
-
-    G --> H["✂️ Limit to 200 characters"]
-
-    H --> I["📡 Meshtastic response"]
+```mermaid
+flowchart TD
+    A["📡 /osm place"] --> B["🔎 SearXNG<br/>place + city"]
+    B --> C["🤖 Vireonix<br/>Extract the real place name"]
+    C -->|"Name found"| D["🗺️ Nominatim"]
+    C -->|"NONE"| E["Use the name typed by the user"]
+    E --> D
+    D -->|"Found"| F["📍 Structured message<br/>name · address · GPS"]
+    D -->|"Not found"| G["❌ Not found, suggest /search"]
+    F --> H["📡 Meshtastic reply"]
+    G --> H
 ```
 
 ---
 
 ## 📋 Requirements
 
-* Docker
-* Docker Compose
-* A Meshtastic node accessible through TCP
-* A running SearXNG instance
+* Docker and Docker Compose
+* A Meshtastic node reachable over TCP (usually port `4403`)
+* A running SearXNG instance with JSON output enabled
 * A Vireonix API endpoint
 * A dedicated Meshtastic channel for the bot
-
-The bot communicates with Meshtastic using the TCP interface, typically on port `4403`.
+* Internet access to Nominatim (`nominatim.openstreetmap.org`) for `/osm`
 
 ---
 
@@ -92,19 +138,13 @@ git clone https://github.com/YR72dpi/meshtastic_search_bot.git
 cd meshtastic_search_bot
 ```
 
----
-
 ## 2. Configure environment variables
-
-Copy the example environment file:
 
 ```bash
 cp .env.example .env
 ```
 
-Then edit `.env` according to your setup.
-
-Example:
+Example `.env`:
 
 ```dotenv
 MESHTASTIC_HOST=192.168.1.161
@@ -115,38 +155,34 @@ CHANNEL_NAME=search
 
 SEARXNG_URL=http://core:8080/search
 
-LOCAL_CONTEXT=Rouen, France
+CITY=Rouen, France
+TZ_NAME=Europe/Paris
+GITHUB_URL=https://github.com/YR72dpi/meshtastic_search_bot
 
 RECONNECT_DELAY_SECONDS=10
 ```
 
 ### Environment variables
 
-| Variable                  | Description                        | Example                   |
-| ------------------------- | ---------------------------------- | ------------------------- |
-| `MESHTASTIC_HOST`         | Meshtastic TCP host                | `192.168.1.161`           |
-| `MESHTASTIC_PORT`         | Meshtastic TCP port                | `4403`                    |
-| `CHANNEL_INDEX`           | Channel index monitored by the bot | `2`                       |
-| `CHANNEL_NAME`            | Human-readable channel name        | `search`                  |
-| `SEARXNG_URL`             | SearXNG search endpoint            | `http://core:8080/search` |
-| `LOCAL_CONTEXT`           | Local context added to searches    | `Rouen, France`           |
-| `RECONNECT_DELAY_SECONDS` | Delay before reconnecting          | `10`                      |
+| Variable | Description | Default / example |
+| --- | --- | --- |
+| `MESHTASTIC_HOST` | Meshtastic TCP host | `192.168.1.161` |
+| `MESHTASTIC_PORT` | Meshtastic TCP port | `4403` |
+| `CHANNEL_INDEX` | Channel index monitored by the bot (**required**) | `2` |
+| `CHANNEL_NAME` | Human-readable channel name (logs only) | `search` |
+| `SEARXNG_URL` | SearXNG search endpoint | `http://core:8080/search` |
+| `CITY` | Local city added to searches and OSM lookups | `Paris, France` |
+| `TZ_NAME` | Time zone used for date and time in prompts | `Europe/Paris` |
+| `GITHUB_URL` | Link returned by `/github` | repository URL |
+| `RECONNECT_DELAY_SECONDS` | Delay before reconnecting | `10` |
 
-> **Important:** `CHANNEL_INDEX` must match the actual Meshtastic channel index. The bot uses the channel index received from the packet when sending the response.
+> **Important:** `CHANNEL_INDEX` must match the real Meshtastic channel index. The bot replies on the channel the message was received on.
 
 ---
 
 # 🔎 SearXNG Configuration
 
-The bot expects SearXNG to return search results in **JSON format**.
-
-Edit:
-
-```text
-core-config/settings.yml
-```
-
-and make sure JSON is enabled:
+The bot expects SearXNG to return **JSON**. In `core-config/settings.yml`:
 
 ```yaml
 search:
@@ -155,51 +191,44 @@ search:
     - json
 ```
 
-The bot then queries:
+The bot then calls:
 
 ```text
 GET /search?q=<query>&format=json
 ```
 
-### Docker networking
-
-If SearXNG and the bot are part of the same Docker Compose project, SearXNG does not need to expose its port to the host.
-
-For example:
+If SearXNG and the bot share a Docker Compose project, no host port is needed:
 
 ```dotenv
 SEARXNG_URL=http://core:8080/search
 ```
 
-Here, `core` is the Docker Compose service name.
+`core` is the Compose service name.
+
+---
+
+# 🗺️ OpenStreetMap (Nominatim)
+
+`/osm` uses the public Nominatim API with `extratags` and `addressdetails` enabled, and French-language results.
+
+Please respect the [Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/):
+
+* Send an identifiable `User-Agent` (for example `meshtastic-search-bot/1.0 (you@example.com)`).
+* Do not exceed one request per second.
+
+Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL 1.0.
 
 ---
 
 # 🐳 Running the Bot
 
-Start the services:
-
 ```bash
-docker compose up -d
+docker compose up -d          # start
+docker compose logs -f        # follow logs
+docker compose down           # stop
 ```
 
-Check the logs:
-
-```bash
-docker compose logs -f
-```
-
-Stop the services:
-
-```bash
-docker compose down
-```
-
----
-
-## 🔨 Rebuild after code changes
-
-When the Python source code changes:
+After any change to the Python code or the prompts, rebuild:
 
 ```bash
 docker compose up -d --build
@@ -209,149 +238,48 @@ docker compose up -d --build
 
 # 🧠 How It Works
 
-When a message is received, the bot first checks that it is a text message and that it was received on the configured search channel.
+The bot only handles **text messages** received on the channel set by `CHANNEL_INDEX`. Everything else is ignored.
 
-### 1. Receive the question
+### Web search (`/search` or plain text)
 
-Example:
+1. **Query generation:** Vireonix receives the question, the city and the current date/time, and produces a concise search query.
+2. **Search:** the query is sent to SearXNG and the top results are used as context.
+3. **Answer:** Vireonix answers in French, directly and concisely, without inventing information. The bot truncates the result to 150 characters.
 
-```text
-What is the weather in Rouen today?
-```
+If Vireonix is unreachable, the bot falls back to the raw question for the search, or returns an excerpt of the results.
 
-### 2. Generate a search query
+### Place lookup (`/osm`)
 
-Vireonix receives:
+1. **Search:** SearXNG is queried with `place + city`.
+2. **Name extraction:** Vireonix extracts the real place name from the results (`NONE` if it finds nothing, in which case the user's text is used).
+3. **OpenStreetMap:** Nominatim is queried with `name, city`.
+4. **Formatting:** the bot builds the structured message itself, without the LLM, so name, address and GPS coordinates are never altered.
 
-* The user's question
-* The configured local context
-* The current local time
+### Replying
 
-It generates a concise web search query.
-
-Example:
-
-```text
-weather Rouen today 24 September 2026
-```
-
-### 3. Search the web
-
-The generated query is sent to SearXNG.
-
-The bot retrieves the highest-scoring results and keeps the first three results containing content.
-
-### 4. Generate the answer
-
-The question and search results are sent to Vireonix.
-
-The model is instructed to:
-
-* Answer in French
-* Answer directly
-* Be concise
-* Avoid inventing information
-* Use the search context
-* Stay below 150 characters
-
-The final result is additionally limited to **200 characters** by the bot.
-
-### 5. Send the answer over Meshtastic
-
-The response is broadcast on the **same channel on which the question was received**.
-
-This is important because it prevents the bot from accidentally replying on another channel.
-
----
-
-# 📡 Meshtastic Channel
-
-The bot only processes messages received on the configured channel:
-
-```dotenv
-CHANNEL_INDEX=2
-CHANNEL_NAME=search
-```
-
-For example:
-
-```text
-0 → LongFast
-1 → Meteo
-2 → Search
-```
-
-A message received on channel `0` or `1` is ignored.
-
-A message received on channel `2` is processed.
-
-The response uses the actual received channel:
+The answer is sent on the **same channel** as the question, linked to the original packet ID when supported by the installed `meshtastic` library:
 
 ```python
-interface.sendText(
-    answer,
-    channelIndex=received_channel
-)
+interface.sendText(answer, channelIndex=received_channel, replyId=original_packet_id)
 ```
 
-This ensures that the answer is sent back to the correct channel.
+> A Meshtastic text message is limited to roughly **230 bytes**, and each emoji counts for about 4 bytes. Keep `/osm` output short.
 
 ---
 
 # 🔄 Automatic Reconnection
 
-The bot monitors the Meshtastic connection.
+If the TCP connection to the node drops, the bot:
 
-If the TCP connection is lost, the bot:
-
-1. Detects the connection loss
+1. Detects the loss through the `meshtastic.connection.lost` event
 2. Closes the existing interface
-3. Waits for `RECONNECT_DELAY_SECONDS`
-4. Creates a new TCP connection
-5. Resumes listening for messages
-
-Example:
+3. Waits `RECONNECT_DELAY_SECONDS`
+4. Opens a new connection and resumes listening
 
 ```text
-[MESHTASTIC] Connexion perdue
-[MESHTASTIC] Reconnexion dans 10s...
+[MESHTASTIC] Connexion perdue.
+[MESHTASTIC] Connexion perdue (...), reconnexion dans 10s...
 [MESHTASTIC] Connecté à 192.168.1.161:4403
-```
-
-This allows the bot to run continuously without requiring manual intervention after a temporary network failure.
-
----
-
-# 🖥️ Example
-
-A Meshtastic user sends:
-
-```text
-search: What is the latest Raspberry Pi 5 model?
-```
-
-The bot processes the request:
-
-```text
-📡 Meshtastic
-      ↓
-🤖 Query generation
-      ↓
-🔎 SearXNG
-      ↓
-📄 Top 3 results
-      ↓
-🤖 Answer generation
-      ↓
-✂️ ≤ 200 characters
-      ↓
-📡 Meshtastic
-```
-
-Example response:
-
-```text
-Le Raspberry Pi 5 existe notamment en versions 2, 4, 8 et 16 Go de RAM.
 ```
 
 ---
@@ -363,167 +291,122 @@ meshtastic_search_bot/
 ├── docker-compose.yml
 ├── Dockerfile
 ├── .env.example
-├── .gitignore
 ├── requirements.txt
-├── core-config/
-│   └── settings.yml
-└── src/
-    └── ...
+├── main.py                  # Meshtastic connection, reception, reply, reconnection
+├── bot.py                   # Commands and answer pipeline
+├── prompt/                  # LLM prompts (Markdown templates)
+│   ├── extract_place_name.md
+│   ├── generate_search_query_for_searXng.md
+│   └── generate_answer_from_searxng.md
+├── tool/
+│   ├── __init__.py
+│   ├── vireonix.py          # LLM client
+│   ├── searXng.py           # SearXNG client
+│   ├── OpenStreetMap.py     # Nominatim client
+│   └── utils.py             # Prompt loading, time variables, helpers
+└── core-config/
+    └── settings.yml         # SearXNG configuration
 ```
 
-The exact structure may vary depending on the Docker configuration.
+### Prompt templates
+
+Prompts live in `prompt/*.md` and use `[placeholder]` variables replaced at runtime:
+
+| Placeholder | Value |
+| --- | --- |
+| `[city]` | `CITY` |
+| `[day]` | Day of the week (in French) |
+| `[date]` | `dd/mm/yyyy` |
+| `[time]` | `HH:MM` |
+| `[question]` | User question (or text to analyze) |
+| `[context]` | Search results |
+
+An unknown placeholder is left as-is and a warning is printed in the logs.
 
 ---
 
 # 📝 Logging
 
-The bot provides logs for the main stages of the pipeline.
-
-Example:
+Each stage of the pipeline is logged:
 
 ```text
-[BOT] Appel : on_receive
-[RX] channel=2 question=What is the weather in Rouen?
-[SEARCH] Question de !abcdef: What is the weather in Rouen?
-[BOT] Appel : build_search_query
-[BOT] Appel : search_searxng
-[SEARXNG] ...
-[BOT] Appel : generate_answer
-[TX] Réponse envoyée sur channel=2 (search)
-```
-
-This makes it easier to diagnose problems with:
-
-* Meshtastic connectivity
-* Channel configuration
-* Vireonix
-* SearXNG
-* Docker networking
-
----
-
-# ⚙️ Configuration Overview
-
-```mermaid
-flowchart TB
-
-    ENV[".env"]
-
-    ENV --> MT["Meshtastic"]
-    ENV --> CH["Search channel"]
-    ENV --> SX["SearXNG"]
-    ENV --> LC["Local context"]
-
-    MT --> BOT["🤖 Search Bot"]
-    CH --> BOT
-    SX --> BOT
-    LC --> BOT
-
-    BOT --> V["Vireonix"]
+[RX] channel=2 question=/osm Moby's café
+[SEARCH] Question de !abcdef: /osm Moby's café
+[BOT] Appel : answer_question
+[BOT] Appel : osm_lookup
+[BOT] Appel : extract_place_name
+[BOT] Appel : search_place_data
+[TX] Réponse envoyée sur channel=2 (search) en réponse à l'id 123456
 ```
 
 ---
 
 # 🔐 Privacy
 
-The search infrastructure can be fully self-hosted.
-
-Instead of sending searches directly to a commercial search engine, the bot can communicate with a local SearXNG instance:
+The search side can be fully self-hosted:
 
 ```text
-Meshtastic
-    ↓
-Your Bot
-    ↓
-Your SearXNG
-    ↓
-Search engines
+Meshtastic → Your bot → Your SearXNG → Search engines
 ```
 
-SearXNG acts as the search aggregation layer while keeping the search interface under your control.
-
-The bot itself does not require a database or user account system.
+The bot uses no database and no user accounts. Note that `/osm` sends the place name and city to the public Nominatim service.
 
 ---
 
 # 🛠️ Troubleshooting
 
-### SearXNG returns no results
+### `ModuleNotFoundError: No module named 'tool'`
 
-Check that JSON output is enabled:
+The container runs an outdated image, or the folder is missing from it. Check the Dockerfile copies `tool/` and rebuild:
 
-```yaml
-search:
-  formats:
-    - html
-    - json
+```bash
+docker compose build --no-cache && docker compose up
 ```
 
-Then verify the endpoint from inside the Docker network.
+Also check `.dockerignore` and any `volumes:` entry that mounts over `/app`.
 
----
+### `FileNotFoundError` on a prompt
+
+Prompts are read from `/app/prompt`. Check the Dockerfile has `COPY prompt/ ./prompt` and that the file exists:
+
+```bash
+docker compose run --rm --entrypoint sh <service> -c "ls -la /app/prompt"
+```
+
+### `ZoneInfoNotFoundError`
+
+The slim image may lack time zone data. Add `tzdata` to `requirements.txt` and rebuild.
+
+### SearXNG returns no results
+
+Check that JSON output is enabled (see [SearXNG Configuration](#-searxng-configuration)) and test the endpoint from inside the Docker network.
 
 ### The bot receives messages but ignores them
 
-Check:
-
-```dotenv
-CHANNEL_INDEX=2
-```
-
-Then verify the channel index in the bot logs:
+Compare `CHANNEL_INDEX` with the channel shown in the logs:
 
 ```text
 [RX] channel=2 question=...
 ```
 
-The received channel must match `CHANNEL_INDEX`.
+### `/osm` says the place was not found
 
----
-
-### The bot replies on the wrong channel
-
-Make sure the response uses the received channel:
-
-```python
-interface.sendText(
-    answer,
-    channelIndex=received_channel
-)
-```
-
-Do not hard-code another channel index.
-
----
+Try a more precise name, or use `/search`. Nominatim only knows what is mapped in OpenStreetMap.
 
 ### Meshtastic connection fails
 
-Verify that the TCP interface is reachable:
-
 ```bash
 nc -zv <MESHTASTIC_HOST> 4403
-```
-
-For example:
-
-```bash
-nc -zv 192.168.1.161 4403
 ```
 
 ---
 
 # 📜 License
 
-Add your preferred license here, for example:
-
-```text
-MIT License
-```
+MIT License (or your preferred license).
 
 ---
 
 ## 🤝 Contributing
 
 Issues, improvements and pull requests are welcome.
-
-If you find a bug or have an idea for improving the search pipeline, feel free to open an issue or submit a pull request.
