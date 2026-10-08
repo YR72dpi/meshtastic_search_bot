@@ -190,7 +190,6 @@ def answer_question(question: str, position=None) -> str:
 
 
     if command == "/help":
-        print(f"{position}")
         return help_message(position)
 
     if command == "/github":
