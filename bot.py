@@ -114,7 +114,8 @@ def format_osm_message(osm: dict) -> str:
         lines.append(f"🕒 {extra['opening_hours']}")
     if extra.get("phone"):
         lines.append(f"📞 {extra['phone']}")
-
+    if osm.get("distance_m") is not None:
+        lines.append(f"📏 {osm['distance_m']} m")
     return "\n".join(lines)
 
 
