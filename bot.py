@@ -118,11 +118,11 @@ def format_osm_message(osm: dict) -> str:
     return "\n".join(lines)
 
 
-def osm_lookup(place_name_user: str) -> str:
+def osm_lookup(place_name_user: str, position=None) -> str:
     print("[BOT] Appel : osm_lookup", flush=True)
 
     # Première recherche OSM
-    osm_data = search_place_data(f"{place_name_user}, {CITY}")
+    osm_data = search_place_data(place_name_user, position)
     if isinstance(osm_data, list):
         osm_data = osm_data[0] if osm_data else None
     if osm_data:
@@ -139,7 +139,7 @@ def osm_lookup(place_name_user: str) -> str:
         clean_place_name = place_name_user
 
     # Deuxième recherche OSM
-    osm_data = search_place_data(f"{clean_place_name}, {CITY}")
+    osm_data = search_place_data(clean_place_name, position)
 
     if isinstance(osm_data, list):
         osm_data = osm_data[0] if osm_data else None
@@ -180,7 +180,7 @@ def parse_command(text: str) -> tuple[str, str]:
     return command.lower(), args.strip()
 
 
-def answer_question(question: str) -> str:
+def answer_question(question: str, position=None) -> str:
     print("[BOT] Appel : answer_question", flush=True)
 
     command, args = parse_command(question)
@@ -192,7 +192,7 @@ def answer_question(question: str) -> str:
         return github_message()
 
     if command == "/osm":
-        return osm_lookup(args) if args else "❌ Usage : /osm [lieu]"
+        return osm_lookup(args, position) if args else "❌ Usage : /osm [lieu]"
 
     if command == "/search":
         return basic_search(args) if args else "❌ Usage : /search [question]"

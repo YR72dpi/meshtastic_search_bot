@@ -11,6 +11,18 @@ SEARCH_CHANNEL_INDEX = int(os.getenv("CHANNEL_INDEX"))
 SEARCH_CHANNEL_NAME = os.getenv("CHANNEL_NAME")
 CITY = os.getenv("CITY", "Paris, France")
 
+def get_sender_position(interface, packet):
+    """Retourne (lat, lon) du nœud expéditeur, ou None si inconnue."""
+    try:
+        node = interface.nodesByNum.get(packet.get("from"))
+        position = (node or {}).get("position") or {}
+        lat, lon = position.get("latitude"), position.get("longitude")
+        if lat is not None and lon is not None:
+            return (lat, lon)
+    except Exception as e:
+        print(f"[POS] Erreur lecture position: {e}", flush=True)
+    return None
+
 def on_receive(packet, interface):
     print(f"\n\n\n[BOT] Appel : on_receive")
     
@@ -48,7 +60,10 @@ def on_receive(packet, interface):
             flush=True
         )
 
-        answer = answer_question(question)
+        position = get_sender_position(interface, packet)
+        print(f"[POS] Position de {sender}: {position}", flush=True)
+
+        answer = answer_question(question, position)
 
         try:
             interface.sendText(
