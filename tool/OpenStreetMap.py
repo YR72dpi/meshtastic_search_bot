@@ -34,6 +34,7 @@ def search_place_data(name: str, position=None, radius_m: int = 1000) -> dict:
         params["bounded"] = 0
 
     try:
+        print(f"[OSM] params : {params}", flush=True)
         response = requests.get(
             NOMINATIM_URL,
             params=params,
