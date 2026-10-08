@@ -158,15 +158,17 @@ def osm_lookup(place_name_user: str, position=None) -> str:
 # Commandes
 # ---------------------------------------------------------------------------
 
-def help_message() -> str:
+def help_message(position=None) -> str:
+    position_status = "✅ détectée" if position else "❌ inconnue (ville par défaut)"
     return (
-        f"🏙️ Ville configurée : {CITY}\n\n"
+        f"🏙️ Ville : {CITY}\n"
+        f"📍 Ta position : {position_status}\n\n"
+
         "🤖 Commandes :\n"
         "🗺️ /osm [lieu] : infos OpenStreetMap\n"
         "🔎 /search [question] : recherche web\n"
         "🐙 /github : lien du dépôt\n"
     )
-
 
 def github_message() -> str:
     return f"🐙 YR72dpi/meshtastic_search_bot"
@@ -186,8 +188,10 @@ def answer_question(question: str, position=None) -> str:
 
     command, args = parse_command(question)
 
+
     if command == "/help":
-        return help_message()
+        print(f"{position}")
+        return help_message(position)
 
     if command == "/github":
         return github_message()
