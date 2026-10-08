@@ -61,8 +61,11 @@ def generate_answer(question: str, context: str) -> str:
 def basic_search(question: str) -> str:
     print("[BOT] Appel : basic_search", flush=True)
 
-    search_query = build_search_query(question)
-    search_result = search_searxng(search_query)
+    # search_query = build_search_query(question)
+    # search_result = search_searxng(search_query)
+    # return generate_answer(question, search_result)
+
+    search_result = search_searxng(question)
     return generate_answer(question, search_result)
 
 
