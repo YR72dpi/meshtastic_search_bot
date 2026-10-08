@@ -1,6 +1,7 @@
 import requests
 import os 
 import math
+import time
 
 CITY = os.getenv("CITY", "Paris")
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
