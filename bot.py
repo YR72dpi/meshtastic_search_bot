@@ -159,15 +159,15 @@ def osm_lookup(place_name_user: str, position=None) -> str:
 # ---------------------------------------------------------------------------
 
 def help_message(position=None) -> str:
-    position_status = "✅ détectée" if position else "❌ inconnue (ville par défaut)"
+    position_status = "détectée ✅" if position else "inconnue ❌"
     return (
         f"🏙️ Ville : {CITY}\n"
-        f"📍 Ta position : {position_status}\n\n"
+        f"📍 Position {position_status}\n\n"
 
         "🤖 Commandes :\n"
-        "🗺️ /osm [lieu] : infos OpenStreetMap\n"
-        "🔎 /search [question] : recherche web\n"
-        "🐙 /github : lien du dépôt\n"
+        "🗺️ /osm [lieu] : informations OpenStreetMap\n"
+        "🔎 /search [question] : recherche sur le Web\n"
+        "🐙 /github : lien vers le dépôt\n"
     )
 
 def github_message() -> str:
