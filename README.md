@@ -5,7 +5,7 @@ A lightweight **Meshtastic Internet assistant**. Nodes on a Meshtastic network c
 The bot listens on a dedicated channel and offers two data sources:
 
 * 🔎 **Web search**: [Vireonix](#-requirements) builds an optimized query, [SearXNG](https://github.com/searxng/searxng) searches the web, Vireonix summarizes the results.
-* 🗺️ **OpenStreetMap**: name, address and GPS position of a place, through Nominatim.
+* 🗺️ **OpenStreetMap**: name, address and GPS position of a place, through Nominatim, prioritizing results close to the requesting node when its GPS position is known.
 
 > 🌐 **Meshtastic → LLM → SearXNG → LLM → Meshtastic**
 > 🗺️ **Meshtastic → SearXNG → LLM → OpenStreetMap → Meshtastic**
@@ -19,6 +19,7 @@ The bot listens on a dedicated channel and offers two data sources:
 * 🔎 Web search through a self-hostable SearXNG instance
 * 🤖 Vireonix for query generation, place-name extraction and answer synthesis
 * 🗺️ Structured place info from OpenStreetMap (name, address, GPS, phone, opening hours)
+* 📍 Distance-aware `/osm` search: uses the sender's GPS position (when known) and expands the search radius (1 km → 5 km → 20 km) until a match is found, keeping the closest result
 * 🏙️ Configurable local city added to searches
 * 🕐 Local date and time available in prompts
 * ✂️ Answers limited to 200 characters
@@ -105,12 +106,16 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A["📡 /osm place"] --> B["🔎 SearXNG<br/>place + city"]
+    A["📡 /osm place"] --> P["📍 Sender GPS position known?"]
+    P -->|"Yes"| N1["🗺️ Nominatim around position<br/>radius 1 km → 5 km → 20 km"]
+    N1 -->|"Found"| F["📍 Structured message<br/>name · address · GPS"]
+    N1 -->|"Not found at any radius"| B
+    P -->|"No"| B["🔎 SearXNG<br/>place + city"]
     B --> C["🤖 Vireonix<br/>Extract the real place name"]
-    C -->|"Name found"| D["🗺️ Nominatim"]
+    C -->|"Name found"| D["🗺️ Nominatim<br/>name + city"]
     C -->|"NONE"| E["Use the name typed by the user"]
     E --> D
-    D -->|"Found"| F["📍 Structured message<br/>name · address · GPS"]
+    D -->|"Found"| F
     D -->|"Not found"| G["❌ Not found, suggest /search"]
     F --> H["📡 Meshtastic reply"]
     G --> H
@@ -211,10 +216,12 @@ SEARXNG_URL=http://core:8080/search
 
 `/osm` uses the public Nominatim API with `extratags` and `addressdetails` enabled, and French-language results.
 
+When the requesting node's GPS position is known (read from `interface.nodesByNum`), the bot searches within a bounding box (`viewbox` + `bounded=1`) around that position, trying successive radii of **1 km, 5 km then 20 km** until results are found, and keeps the closest one (Haversine distance). If the position is unknown or nothing is found at any radius, it falls back to a plain `name, city` search.
+
 Please respect the [Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/):
 
 * Send an identifiable `User-Agent` (for example `meshtastic-search-bot/1.0 (you@example.com)`).
-* Do not exceed one request per second.
+* Do not exceed one request per second — the bot waits 1 second between radius attempts.
 
 Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL 1.0.
 
@@ -250,10 +257,12 @@ If Vireonix is unreachable, the bot falls back to the raw question for the searc
 
 ### Place lookup (`/osm`)
 
-1. **Search:** SearXNG is queried with `place + city`.
-2. **Name extraction:** Vireonix extracts the real place name from the results (`NONE` if it finds nothing, in which case the user's text is used).
-3. **OpenStreetMap:** Nominatim is queried with `name, city`.
-4. **Formatting:** the bot builds the structured message itself, without the LLM, so name, address and GPS coordinates are never altered.
+1. **Position:** the bot tries to read the sender node's GPS position from the Meshtastic interface.
+2. **Nearby search:** if a position is known, Nominatim is queried around it with growing radii (1 km, 5 km, 20 km); the closest result is kept.
+3. **Fallback search:** without a position, or if nothing was found nearby, SearXNG is queried with `place + city`.
+4. **Name extraction:** Vireonix extracts the real place name from the SearXNG results (`NONE` if it finds nothing, in which case the user's text is used).
+5. **OpenStreetMap:** Nominatim is queried with `name, city`.
+6. **Formatting:** the bot builds the structured message itself, without the LLM, so name, address and GPS coordinates are never altered.
 
 ### Replying
 
