@@ -12,6 +12,14 @@ The bot listens on a dedicated channel and offers two data sources:
 
 ---
 
+## ⚠️ About TCP connection
+
+As things stand, because of the TCP connection, the node will not be accessible from a client application.
+
+You have to stop the docker service to get the connection back.
+
+---
+
 ## ✨ Features
 
 * 📡 Listens to a dedicated Meshtastic channel
