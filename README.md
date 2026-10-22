@@ -1,5 +1,7 @@
 # 📡 Meshtastic Search Bot
 
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+
 A lightweight **Meshtastic Internet assistant**. Nodes on a Meshtastic network can ask questions or look up places and receive short answers suited to LoRa.
 
 The bot listens on a dedicated channel and offers two data sources:
@@ -420,7 +422,11 @@ nc -zv <MESHTASTIC_HOST> 4403
 
 # 📜 License
 
-MIT License (or your preferred license).
+This project is licensed under the **GNU General Public License v3.0 (GPLv3)**.
+
+See the [LICENSE](LICENSE) file for the full license text. In short, GPLv3 lets you use,
+study, modify and redistribute this software, provided that any distributed derivative
+work is also released under the GPLv3 and keeps its source code available.
 
 ---
 
