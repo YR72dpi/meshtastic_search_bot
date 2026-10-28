@@ -326,6 +326,7 @@ meshtastic_search_bot/
 │   ├── vireonix.py          # LLM client
 │   ├── searXng.py           # SearXNG client
 │   ├── OpenStreetMap.py     # Nominatim client
+│   ├── Georisques.py        # Géorisques client (/georisque)
 │   └── utils.py             # Prompt loading, time variables, helpers
 └── core-config/
     └── settings.yml         # SearXNG configuration
