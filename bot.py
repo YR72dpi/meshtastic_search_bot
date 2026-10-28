@@ -195,6 +195,15 @@ def help_message(position=None) -> str:
 def github_message() -> str:
     return f"🐙 YR72dpi/meshtastic_search_bot"
 
+def ham_relay() -> str:
+    return (
+        f"F5ZFF - Mont-Saint-Aignan, Rue Boucicaut\n"
+        f"TX 145.6375 | RX 145.0375 | Shift -0.6000 | FM | CTCSS : 94.8\n\n"
+
+        f"F5ZMK - Deville-les-Rouen\n"
+        f"TX 430.0500 | RX 431.6500 | Shift +1.6000 | FM | CTCSS : 94.8"
+
+    )
 
 def parse_command(text: str) -> tuple[str, str]:
     """'/osm café Moby' -> ('/osm', 'café Moby'). Sans commande -> ('', text)."""
@@ -219,6 +228,9 @@ def answer_question(question: str, position=None) -> str:
 
     if command == "/georisque":
         return georisque_lookup()
+
+    if command == "/hamrelay" :
+        return ham_relay()
 
     if command == "/osm":
         return osm_lookup(args, position) if args else "❌ Usage : /osm [lieu]"
