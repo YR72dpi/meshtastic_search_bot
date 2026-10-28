@@ -25,10 +25,11 @@ You have to stop the docker service to get the connection back.
 ## ✨ Features
 
 * 📡 Listens to a dedicated Meshtastic channel
-* 💬 Simple commands: `/help`, `/osm`, `/search`, `/github`
+* 💬 Simple commands: `/help`, `/osm`, `/georisque`, `/search`, `/github`
 * 🔎 Web search through a self-hostable SearXNG instance
 * 🤖 Vireonix for query generation, place-name extraction and answer synthesis
 * 🗺️ Structured place info from OpenStreetMap (name, address, GPS, phone, opening hours)
+* ⚠️ Commune-level risk information from the French Géorisques API
 * 📍 Distance-aware `/osm` search: uses the sender's GPS position (when known) and expands the search radius (1 km → 5 km → 20 km) until a match is found, keeping the closest result
 * 🏙️ Configurable local city added to searches
 * 🕐 Local date and time available in prompts
@@ -45,6 +46,7 @@ You have to stop the docker service to get the connection back.
 | --- | --- | --- |
 | `/help` | 📖 Lists the commands and the configured city | `/help` |
 | `/osm [place]` | 🗺️ OpenStreetMap info: name, address, GPS | `/osm Moby's café` |
+| `/georisque` | ⚠️ Lists commune risks with status `Risque Existant` or `Risque Existant - modéré` | `/georisque` |
 | `/search [question]` | 🔎 Web search summarized by the LLM | `/search latest Raspberry Pi model` |
 | `/github` | 🐙 Link to the repository | `/github` |
 | *any other text* | 🔎 Handled like `/search` | `weather in Rouen today?` |
@@ -141,6 +143,7 @@ flowchart TD
 * A Vireonix API endpoint
 * A dedicated Meshtastic channel for the bot
 * Internet access to Nominatim (`nominatim.openstreetmap.org`) for `/osm`
+* Internet access to Géorisques (`georisques.gouv.fr`) for `/georisque`
 
 ---
 
@@ -368,7 +371,7 @@ The search side can be fully self-hosted:
 Meshtastic → Your bot → Your SearXNG → Search engines
 ```
 
-The bot uses no database and no user accounts. Note that `/osm` sends the place name and city to the public Nominatim service.
+The bot uses no database and no user accounts. Note that `/osm` sends the place name and city to the public Nominatim service, and `/georisque` sends the configured city to the public Géorisques API.
 
 ---
 
