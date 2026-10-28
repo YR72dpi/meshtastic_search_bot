@@ -15,6 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import os
+import time
 
 import requests
 
@@ -205,21 +206,33 @@ def georisque_lookup() -> str:
     """Liste les risques communaux existants pour la ville configurée."""
     print("[BOT] Appel : georisque_lookup", flush=True)
 
-    try:
-        response = requests.get(
-            GEORISQUES_URL,
-            params={"adresse": CITY},
-            headers={"accept": "application/json"},
-            timeout=10,
-        )
-        response.raise_for_status()
-        data = response.json()
-    except requests.RequestException as e:
-        print(f"[GEORISQUES] Erreur de requête : {e}", flush=True)
-        return "❌ Service Géorisques indisponible."
-    except ValueError as e:
-        print(f"[GEORISQUES] Réponse JSON invalide : {e}", flush=True)
-        return "❌ Réponse Géorisques invalide."
+    for attempt in range(2):
+        try:
+            response = requests.get(
+                GEORISQUES_URL,
+                params={"adresse": CITY},
+                headers={
+                    "accept": "application/json",
+                    "User-Agent": "MeshtasticSearchBot/1.0",
+                },
+                timeout=10,
+            )
+            response.raise_for_status()
+            data = response.json()
+            break
+        except (requests.ConnectionError, requests.Timeout) as e:
+            if attempt == 0:
+                print(f"[GEORISQUES] Connexion interrompue, nouvel essai : {e}", flush=True)
+                time.sleep(1)
+                continue
+            print(f"[GEORISQUES] Erreur de requête : {e}", flush=True)
+            return "❌ Service Géorisques indisponible."
+        except requests.RequestException as e:
+            print(f"[GEORISQUES] Erreur de requête : {e}", flush=True)
+            return "❌ Service Géorisques indisponible."
+        except ValueError as e:
+            print(f"[GEORISQUES] Réponse JSON invalide : {e}", flush=True)
+            return "❌ Réponse Géorisques invalide."
 
     if (
         not isinstance(data, dict)
