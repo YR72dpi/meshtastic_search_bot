@@ -79,6 +79,7 @@ def search_place_data(name: str, position=None, radii_m=(100, 250, 500, 1000, 50
     try:
         closed_fallback = {}
         if position:
+            print("[search_place_data] With Position", flush=True)
             lat, lon = position
             for radius_m in radii_m:
                 d_lat = radius_m / 111_320
