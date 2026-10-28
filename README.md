@@ -47,7 +47,7 @@ You have to stop the docker service to get the connection back.
 | --- | --- | --- |
 | `/help` | 📖 Lists the commands and the configured city | `/help` |
 | `/osm [place]` | 🗺️ OpenStreetMap info: name, address, GPS | `/osm Moby's café` |
-| `/georisque` | ⚠️ Lists commune risks with status `Risque Existant` or `Risque Existant - modéré` | `/georisque` |
+| `/georisque` | ⚠️ Lists commune risks with status `Risque Existant` or `Risque Existant - modéré` (cached 7 days in memory, configurable via `GEORISQUES_CACHE_TTL` in seconds) | `/georisque` |
 | `/search [question]` | 🔎 Web search summarized by the LLM | `/search latest Raspberry Pi model` |
 | `/github` | 🐙 Link to the repository | `/github` |
 | *any other text* | 🔎 Handled like `/search` | `weather in Rouen today?` |
