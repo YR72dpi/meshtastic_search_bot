@@ -30,6 +30,7 @@ You have to stop the docker service to get the connection back.
 * 🤖 Vireonix for query generation, place-name extraction and answer synthesis
 * 🗺️ Structured place info from OpenStreetMap (name, address, GPS, phone, opening hours)
 * ⚠️ Commune-level risk information from the French Géorisques API
+* 🟢 `/osm` prefers places that are currently open (from the OSM `opening_hours` tag, in the `TZ_NAME` time zone); places without opening hours are kept, and if every match is known to be closed the closest one is returned and flagged `(fermé)`
 * 📍 Distance-aware `/osm` search: uses the sender's GPS position (when known) and expands the search radius (1 km → 5 km → 20 km) until a match is found, keeping the closest result
 * 🏙️ Configurable local city added to searches
 * 🕐 Local date and time available in prompts

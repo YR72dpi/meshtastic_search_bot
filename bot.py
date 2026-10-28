@@ -138,7 +138,8 @@ def format_osm_message(osm: dict) -> str:
 
     extra = osm.get("extratags") or {}
     if extra.get("opening_hours"):
-        lines.append(f"🕒 {extra['opening_hours']}")
+        closed = " (fermé)" if osm.get("is_open") is False else ""
+        lines.append(f"🕒 {extra['opening_hours']}{closed}")
     if extra.get("phone"):
         lines.append(f"📞 {extra['phone']}")
     if osm.get("distance_m") is not None:
