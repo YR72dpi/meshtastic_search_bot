@@ -25,13 +25,14 @@ You have to stop the docker service to get the connection back.
 ## ✨ Features
 
 * 📡 Listens to a dedicated Meshtastic channel
-* 💬 Simple commands: `/help`, `/osm`, `/georisque`, `/search`, `/github`
+* 💬 Simple commands: `/help`, `/osm`, `/georisque`, `/gps`, `/hamrelay`, `/search`, `/github`
 * 🔎 Web search through a self-hostable SearXNG instance
 * 🤖 Vireonix for query generation, place-name extraction and answer synthesis
 * 🗺️ Structured place info from OpenStreetMap (name, address, GPS, phone, opening hours)
 * ⚠️ Commune-level risk information from the French Géorisques API
 * 🟢 `/osm` prefers places that are currently open (from the OSM `opening_hours` tag, in the `TZ_NAME` time zone); places without opening hours are kept, and if every match is known to be closed the closest one is returned and flagged `(fermé)`
 * 📍 Distance-aware `/osm` search: uses the sender's GPS position (when known) and expands the search radius (1 km → 5 km → 20 km) until a match is found, keeping the closest result
+* 🧭 `/gps` returns the sender's coordinates and a nearby address (reverse geocoding via Nominatim)
 * 🏙️ Configurable local city added to searches
 * 🕐 Local date and time available in prompts
 * ✂️ Answers limited to 200 characters
@@ -48,6 +49,8 @@ You have to stop the docker service to get the connection back.
 | `/help` | 📖 Lists the commands and the configured city | `/help` |
 | `/osm [place]` | 🗺️ OpenStreetMap info: name, address, GPS | `/osm Moby's café` |
 | `/georisque` | ⚠️ Lists commune risks with status `Risque Existant` or `Risque Existant - modéré` (cached 7 days in memory, configurable via `GEORISQUES_CACHE_TTL` in seconds) | `/georisque` |
+| `/gps` | 🧭 Your GPS coordinates (`Long` / `Lat`) and the nearest address (reverse geocoding) | `/gps` |
+| `/hamrelay` | 📻 Amateur radio repeaters around Rouen (static text, hard-coded in `bot.py`) | `/hamrelay` |
 | `/search [question]` | 🔎 Web search summarized by the LLM | `/search latest Raspberry Pi model` |
 | `/github` | 🐙 Link to the repository | `/github` |
 | *any other text* | 🔎 Handled like `/search` | `weather in Rouen today?` |
@@ -68,6 +71,20 @@ An unknown command returns `❓ Commande inconnue. Tape /help`.
 ```
 
 The `🕒` (opening hours) and `📞` (phone) lines only appear when the data exists in OpenStreetMap.
+
+### Example: `/gps`
+
+```text
+/gps
+```
+
+```text
+Long : 1.09930
+Lat : 49.44320
+🏠 2 Place du Général de Gaulle, 76000 Rouen
+```
+
+Coordinates are rounded to 5 decimals (about 1 m). The `🏠` line is omitted if the reverse geocoding fails. If the node's position is unknown, the bot replies `Bot cannot get your GPS coordonate`.
 
 ### Example: `/search`
 
@@ -134,6 +151,20 @@ flowchart TD
     G --> H
 ```
 
+### `/gps`
+
+```mermaid
+flowchart TD
+    A["📡 /gps"] --> P["📍 Sender GPS position known?"]
+    P -->|"No"| X["Bot cannot get your GPS coordonate"]
+    P -->|"Yes"| N["🗺️ Nominatim reverse<br/>lat + lon"]
+    N -->|"Found"| F["Long · Lat · 🏠 address"]
+    N -->|"Error / nothing"| G["Long · Lat"]
+    F --> H["📡 Meshtastic reply"]
+    G --> H
+    X --> H
+```
+
 ---
 
 ## 📋 Requirements
@@ -143,7 +174,7 @@ flowchart TD
 * A running SearXNG instance with JSON output enabled
 * A Vireonix API endpoint
 * A dedicated Meshtastic channel for the bot
-* Internet access to Nominatim (`nominatim.openstreetmap.org`) for `/osm`
+* Internet access to Nominatim (`nominatim.openstreetmap.org`) for `/osm` and `/gps`
 * Internet access to Géorisques (`georisques.gouv.fr`) for `/georisque`
 
 ---
@@ -232,6 +263,8 @@ SEARXNG_URL=http://core:8080/search
 
 When the requesting node's GPS position is known (read from `interface.nodesByNum`), the bot searches within a bounding box (`viewbox` + `bounded=1`) around that position, trying successive radii of **1 km, 5 km then 20 km** until results are found, and keeps the closest one (Haversine distance). If the position is unknown or nothing is found at any radius, it falls back to a plain `name, city` search.
 
+`/gps` uses the Nominatim `reverse` endpoint (`reverse_geocode` in `tool/OpenStreetMap.py`) with `format=jsonv2`, `addressdetails=1` and French-language results. The address is shortened by the same helper as `/osm`.
+
 Please respect the [Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/):
 
 * Send an identifiable `User-Agent` (for example `meshtastic-search-bot/1.0 (you@example.com)`).
@@ -277,6 +310,12 @@ If Vireonix is unreachable, the bot falls back to the raw question for the searc
 4. **Name extraction:** Vireonix extracts the real place name from the SearXNG results (`NONE` if it finds nothing, in which case the user's text is used).
 5. **OpenStreetMap:** Nominatim is queried with `name, city`.
 6. **Formatting:** the bot builds the structured message itself, without the LLM, so name, address and GPS coordinates are never altered.
+
+### Position lookup (`/gps`)
+
+1. **Position:** the sender node's GPS position is read from the Meshtastic interface.
+2. **Reverse geocoding:** Nominatim's `reverse` endpoint returns the nearest place for the coordinates.
+3. **Formatting:** the bot replies with `Long`, `Lat` and, if available, a short address. No LLM is involved.
 
 ### Replying
 
@@ -373,7 +412,7 @@ The search side can be fully self-hosted:
 Meshtastic → Your bot → Your SearXNG → Search engines
 ```
 
-The bot uses no database and no user accounts. Note that `/osm` sends the place name and city to the public Nominatim service, and `/georisque` sends the configured city to the public Géorisques API.
+The bot uses no database and no user accounts. Note that `/gps` sends the sender's coordinates and `/osm` sends the place name and city to the public Nominatim service, and `/georisque` sends the configured city to the public Géorisques API.
 
 ---
 
