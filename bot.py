@@ -238,7 +238,7 @@ def answer_question(question: str, position=None) -> str:
         return github_message()
 
     if command == "/gps":
-        return get_position()
+        return get_position(position)
 
     if command == "/georisque":
         return georisque_lookup()
