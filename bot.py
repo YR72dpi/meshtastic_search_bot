@@ -198,11 +198,11 @@ def github_message() -> str:
 
 def ham_relay() -> str:
     return (
-        f"F5ZFF - Mont-Saint-Aignan, Rue Boucicaut\n"
-        f"TX 145.6375 | RX 145.0375 | Shift -0.6000 | FM | CTCSS : 94.8\n\n"
+        f"📻 F5ZFF - Mont-Saint-Aignan, Rue Boucicaut\n"
+        f"TX 145.6375 \n RX 145.0375 \n Shift -0.6000 \n FM \n CTCSS : 94.8\n\n"
 
-        f"F5ZMK - Deville-les-Rouen\n"
-        f"TX 430.0500 | RX 431.6500 | Shift +1.6000 | FM | CTCSS : 94.8"
+        f"📻 F5ZMK - Deville-les-Rouen\n"
+        f"TX 430.0500 \n RX 431.6500 \n Shift +1.6000 \n FM \n CTCSS : 94.8"
 
     )
 
