@@ -180,6 +180,7 @@ def osm_lookup(place_name_user: str, position=None) -> str:
 # ---------------------------------------------------------------------------
 
 def help_message(position=None) -> str:
+    print("[BOT] Appel : help_message", flush=True)
     position_status = "détectée ✅" if position else "inconnue ❌"
     return (
         f"🏙️ {CITY}\n"
@@ -194,9 +195,11 @@ def help_message(position=None) -> str:
     )
 
 def github_message() -> str:
+    print("[BOT] Appel : github_message", flush=True)
     return f"🐙 YR72dpi/meshtastic_search_bot"
 
 def ham_relay() -> str:
+    print("[BOT] Appel : ham_relay", flush=True)
     return (
         f"📻 F5ZFF - Mont-Saint-Aignan, Rue Boucicaut\n"
         f"TX 145.6375 \n RX 145.0375 \n Shift -0.6000 \n FM \n CTCSS : 94.8\n\n"
@@ -206,6 +209,7 @@ def ham_relay() -> str:
     )
 
 def parse_command(text: str) -> tuple[str, str]:
+    print("[BOT] Appel : parse_command", flush=True)
     """'/osm café Moby' -> ('/osm', 'café Moby'). Sans commande -> ('', text)."""
     text = text.strip()
     if not text.startswith("/"):
@@ -214,7 +218,7 @@ def parse_command(text: str) -> tuple[str, str]:
     return command.lower(), args.strip()
 
 def get_position(position=None) -> str :
-
+    print("[BOT] Appel : get_position", flush=True)
     if position == None:
         return (
             f"Bot cannot get your GPS coordonate"
