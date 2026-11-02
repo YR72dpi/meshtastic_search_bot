@@ -203,7 +203,6 @@ def ham_relay() -> str:
 
         f"📻 F5ZMK - Deville-les-Rouen\n"
         f"TX 430.0500 \n RX 431.6500 \n Shift +1.6000 \n FM \n CTCSS : 94.8"
-
     )
 
 def parse_command(text: str) -> tuple[str, str]:
