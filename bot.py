@@ -223,7 +223,7 @@ def get_position(position=None) -> str :
         return "Bot cannot get your GPS coordonate"
 
     lat, lon = position
-    return f"long : {lon:.5f}\nLat : {lat:.5f}"
+    return f"Long : {lon:.5f}\nLat : {lat:.5f}"
 
 def answer_question(question: str, position=None) -> str:
     print("[BOT] Appel : answer_question", flush=True)
