@@ -18,7 +18,7 @@ import os
 
 from tool.vireonix import call_vireonix
 from tool.searXng import search_searxng
-from tool.OpenStreetMap import search_place_data
+from tool.OpenStreetMap import search_place_data, reverse_geocode
 from tool.Georisques import georisque_lookup
 from tool.utils import load_prompt, excerpt_ending_with_period
 
@@ -223,7 +223,12 @@ def get_position(position=None) -> str :
         return "Bot cannot get your GPS coordonate"
 
     lat, lon = position
-    return f"Long : {lon:.5f}\nLat : {lat:.5f}"
+    message = f"Long : {lon:.5f}\nLat : {lat:.5f}"
+
+    place = reverse_geocode(lat, lon)
+    if place:
+        message += f"\n🏠 {format_address(place)}"
+    return message
 
 def answer_question(question: str, position=None) -> str:
     print("[BOT] Appel : answer_question", flush=True)

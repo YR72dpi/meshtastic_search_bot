@@ -9,6 +9,7 @@ from opening_hours import OpeningHours
 
 CITY = os.getenv("CITY", "Paris")
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
+NOMINATIM_REVERSE_URL = "https://nominatim.openstreetmap.org/reverse"
 # La politique d'usage de Nominatim impose un User-Agent identifiable
 OSM_USER_AGENT = "meshtastic-search-bot/1.0 (ton@email.fr)"
 TIMEZONE = ZoneInfo(os.getenv("TZ_NAME", "Europe/Paris"))
@@ -71,6 +72,31 @@ def _nominatim(params: dict) -> list:
     )
     response.raise_for_status()
     return response.json()
+
+
+def reverse_geocode(lat: float, lon: float) -> dict:
+    """Géocodage inverse : retourne le lieu OSM le plus proche, {} en cas d'échec."""
+    print("[BOT] Appel : reverse_geocode", flush=True)
+
+    try:
+        response = requests.get(
+            NOMINATIM_REVERSE_URL,
+            params={
+                "lat": lat,
+                "lon": lon,
+                "format": "jsonv2",
+                "addressdetails": 1,
+                "accept-language": "fr",
+            },
+            headers={"User-Agent": OSM_USER_AGENT},
+            timeout=10,
+        )
+        response.raise_for_status()
+        data = response.json()
+        return {} if "error" in data else data
+    except Exception as e:
+        print(f"[OSM] Erreur reverse: {e}", flush=True)
+        return {}
 
 
 def search_place_data(name: str, position=None, radii_m=(100, 250, 500, 1000, 5000, 20000)) -> dict:
