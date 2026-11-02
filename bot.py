@@ -186,8 +186,9 @@ def help_message(position=None) -> str:
         f"📍 Position {position_status}\n\n"
 
         "🤖 Commandes :\n"
-        "🗺️ /osm [lieu] : infos OpenStreetMap\n"
+        "📍 /gps : coordonnées GPS\n"
         "⚠️ /georisque : risques commune\n"
+        "🗺️ /osm [lieu] : infos OSM\n"
         "🔎 /search [question] : recherche Web\n"
         "🐙 /github : dépôt"
     )
@@ -213,18 +214,31 @@ def parse_command(text: str) -> tuple[str, str]:
     command, _, args = text.partition(" ")
     return command.lower(), args.strip()
 
+def get_position(position=None) -> str :
+
+    if position == None:
+        return (
+            f"Bot cannot get your GPS coordonate"
+        )
+
+    
+    return (
+        f"Position {position}"
+    )
 
 def answer_question(question: str, position=None) -> str:
     print("[BOT] Appel : answer_question", flush=True)
 
     command, args = parse_command(question)
 
-
     if command == "/help":
         return help_message(position)
 
     if command == "/github":
         return github_message()
+
+    if command == "/gps":
+        return get_position()
 
     if command == "/georisque":
         return georisque_lookup()
