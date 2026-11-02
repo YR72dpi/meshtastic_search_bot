@@ -219,15 +219,11 @@ def parse_command(text: str) -> tuple[str, str]:
 
 def get_position(position=None) -> str :
     print("[BOT] Appel : get_position", flush=True)
-    if position == None:
-        return (
-            f"Bot cannot get your GPS coordonate"
-        )
+    if position is None:
+        return "Bot cannot get your GPS coordonate"
 
-    
-    return (
-        f"Position {position}"
-    )
+    lat, lon = position
+    return f"long : {lon:.5f}\nLat : {lat:.5f}"
 
 def answer_question(question: str, position=None) -> str:
     print("[BOT] Appel : answer_question", flush=True)
