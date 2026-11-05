@@ -262,7 +262,7 @@ def answer_question(question: str, position=None) -> str:
         return georisque_lookup()
 
     if command == "/emergency":
-        return emergency(arg)
+        return emergency(args)
 
     if command == "/hamrelay" :
         return ham_relay()
