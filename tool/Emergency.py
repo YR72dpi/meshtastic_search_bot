@@ -10,7 +10,7 @@ CAS_INDEX_PATH = (
 )
 
 
-def get_all_cas() -> str:
+def get_all_case() -> str:
     """Retourne le numéro et le nom de chaque cas sous forme de texte."""
     with CAS_INDEX_PATH.open(encoding="utf-8") as cas_file:
         index = json.load(cas_file)
