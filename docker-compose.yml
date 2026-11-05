@@ -39,15 +39,18 @@ services:
     depends_on:
       - ollama
     restart: "no"
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen3:1.7b}"
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
-        until ollama -H http://ollama:11434 list; do
+        until ollama list; do
           echo "Attente du démarrage d'Ollama..."
           sleep 2
         done
-        ollama -H http://ollama:11434 pull ${OLLAMA_MODEL:-qwen3:1.7b}
-        echo "Modèle ${OLLAMA_MODEL:-qwen3:1.7b} installé !"
+        ollama pull "$$OLLAMA_MODEL"
+        echo "Modèle $$OLLAMA_MODEL installé !"
 
   # the search engine
   core:
