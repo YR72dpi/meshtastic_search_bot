@@ -7,7 +7,7 @@ from urllib.parse import urljoin
 BASE_URL = "https://avantlessecours.odersa.org/"
 INDEX_URL = urljoin(BASE_URL, "data/fr/cas.json")
 
-OUTPUT_DIR = Path("first-aid")
+OUTPUT_DIR = Path(__file__).resolve().parent / "first-aid"
 
 session = requests.Session()
 session.headers.update({
@@ -69,4 +69,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
