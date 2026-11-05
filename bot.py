@@ -16,7 +16,7 @@
 
 import os
 
-from tool.vireonix import call_vireonix
+from tool.ollama import call_ollama
 from tool.searXng import search_searxng
 from tool.OpenStreetMap import search_place_data, reverse_geocode
 from tool.Georisques import georisque_lookup
@@ -27,7 +27,7 @@ CITY = os.getenv("CITY", "Paris, France")
 MAX_MESSAGE_LENGTH = 199
 
 # ---------------------------------------------------------------------------
-# Étapes LLM (Vireonix)
+# Étapes LLM (Ollama)
 # ---------------------------------------------------------------------------
 
 def extract_place_name(search_result: str) -> str:
@@ -36,7 +36,7 @@ def extract_place_name(search_result: str) -> str:
 
     prompt = load_prompt("extract_place_name", question=search_result)
     try:
-        name = call_vireonix(prompt).strip().strip('"')
+        name = call_ollama(prompt).strip().strip('"')
         return "" if name.upper() == "NONE" else name
     except Exception as e:
         print(f"[OSM] Erreur extraction du lieu: {e}", flush=True)
@@ -49,11 +49,11 @@ def build_search_query(question: str) -> str:
 
     prompt = load_prompt("generate_search_query_for_searXng", question=question)
     try:
-        query = call_vireonix(prompt).strip()
+        query = call_ollama(prompt).strip()
         print(f"[BOT] Requête reformulée : {query}", flush=True)
         return query or question.strip()
     except Exception as e:
-        print(f"[VIREONIX] Erreur formulation requête: {e}", flush=True)
+        print(f"[OLLAMA] Erreur formulation requête: {e}", flush=True)
         return question.strip()
 
 
@@ -67,9 +67,9 @@ def generate_answer(question: str, context: str) -> str:
         context=context,
     )
     try:
-        return call_vireonix(prompt)
+        return call_ollama(prompt)
     except Exception as e:
-        print(f"[VIREONIX] Erreur: {e}", flush=True)
+        print(f"[OLLAMA] Erreur: {e}", flush=True)
         return f"LLM inaccessible. {excerpt_ending_with_period(context)}"
 
 
@@ -260,7 +260,7 @@ def emergency(arg) -> str :
         )
     print(prompt)
     # numero de l'assistance
-    query = call_vireonix(prompt).strip()
+    query = call_ollama(prompt).strip()
     return get_cas_gestes(query)
 
 

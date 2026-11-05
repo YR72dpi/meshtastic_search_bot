@@ -12,10 +12,42 @@ services:
       TZ_NAME: "${TZ_NAME:-Europe/Paris}"
       RECONNECT_DELAY_SECONDS: "${RECONNECT_DELAY_SECONDS:-10}"
       GEORISQUES_CACHE_TTL: "${GEORISQUES_CACHE_TTL:-604800}"
-      VIREONIX_URL: "${VIREONIX_URL}"
+      OLLAMA_URL: "${OLLAMA_URL:-http://ollama:11434/api/chat}"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen3:1.7b}"
       SEARXNG_URL: "${SEARXNG_URL}"
     depends_on:
-      - core
+      core:
+        condition: service_started
+      ollama-init:
+        condition: service_completed_successfully
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    environment:
+      OLLAMA_NUM_PARALLEL: 1
+      OLLAMA_MAX_LOADED_MODELS: 1
+
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: ollama-init
+    depends_on:
+      - ollama
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        until ollama -H http://ollama:11434 list; do
+          echo "Attente du démarrage d'Ollama..."
+          sleep 2
+        done
+        ollama -H http://ollama:11434 pull ${OLLAMA_MODEL:-qwen3:1.7b}
+        echo "Modèle ${OLLAMA_MODEL:-qwen3:1.7b} installé !"
 
   # the search engine
   core:
@@ -36,5 +68,6 @@ services:
       - valkey-data:/data/
 
 volumes:
+  ollama_data:
   core-data:
   valkey-data:

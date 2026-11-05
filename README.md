@@ -6,7 +6,7 @@ A lightweight **Meshtastic Internet assistant**. Nodes on a Meshtastic network c
 
 The bot listens on a dedicated channel and offers two data sources:
 
-* 🔎 **Web search**: [Vireonix](#-requirements) builds an optimized query, [SearXNG](https://github.com/searxng/searxng) searches the web, Vireonix summarizes the results.
+* 🔎 **Web search**: Ollama builds an optimized query, [SearXNG](https://github.com/searxng/searxng) searches the web, and Ollama summarizes the results.
 * 🗺️ **OpenStreetMap**: name, address and GPS position of a place, through Nominatim, prioritizing results close to the requesting node when its GPS position is known.
 
 > 🌐 **Meshtastic → LLM → SearXNG → LLM → Meshtastic**
@@ -27,7 +27,7 @@ You have to stop the docker service to get the connection back.
 * 📡 Listens to a dedicated Meshtastic channel
 * 💬 Simple commands: `/help`, `/osm`, `/georisque`, `/gps`, `/hamrelay`, `/search`, `/github`
 * 🔎 Web search through a self-hostable SearXNG instance
-* 🤖 Vireonix for query generation, place-name extraction and answer synthesis
+* 🤖 Local Ollama model for query generation, place-name extraction and answer synthesis
 * 🗺️ Structured place info from OpenStreetMap (name, address, GPS, phone, opening hours)
 * ⚠️ Commune-level risk information from the French Géorisques API
 * 🟢 `/osm` prefers places that are currently open (from the OSM `opening_hours` tag, in the `TZ_NAME` time zone); places without opening hours are kept, and if every match is known to be closed the closest one is returned and flagged `(fermé)`
@@ -104,7 +104,7 @@ Le Raspberry Pi 5 existe notamment en versions 2, 4, 8 et 16 Go de RAM.
 flowchart LR
     M["📡 Meshtastic Node"]
     B["🤖 Bot"]
-    V["🧠 Vireonix"]
+    V["🧠 Ollama"]
     S["🔎 SearXNG"]
     O["🗺️ OpenStreetMap<br/>(Nominatim)"]
 
@@ -123,11 +123,11 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    A["📡 Message on search channel"] --> B["🤖 Vireonix<br/>Build search query"]
+    A["📡 Message on search channel"] --> B["🤖 Ollama<br/>Build search query"]
     B -.-> L["🏙️ City<br/>🕐 Date and time"]
     B --> C["🔎 SearXNG<br/>Web search"]
     C --> D["📄 Top results"]
-    D --> E["🤖 Vireonix<br/>Generate short answer"]
+    D --> E["🤖 Ollama<br/>Generate short answer"]
     E --> F["✂️ Limit to 200 characters"]
     F --> G["📡 Meshtastic reply"]
 ```
@@ -141,7 +141,7 @@ flowchart TD
     N1 -->|"Found"| F["📍 Structured message<br/>name · address · GPS"]
     N1 -->|"Not found at any radius"| B
     P -->|"No"| B["🔎 SearXNG<br/>place + city"]
-    B --> C["🤖 Vireonix<br/>Extract the real place name"]
+    B --> C["🤖 Ollama<br/>Extract the real place name"]
     C -->|"Name found"| D["🗺️ Nominatim<br/>name + city"]
     C -->|"NONE"| E["Use the name typed by the user"]
     E --> D
@@ -172,7 +172,7 @@ flowchart TD
 * Docker and Docker Compose
 * A Meshtastic node reachable over TCP (usually port `4403`)
 * A running SearXNG instance with JSON output enabled
-* A Vireonix API endpoint
+* Docker Compose starts Ollama and downloads the configured model
 * A dedicated Meshtastic channel for the bot
 * Internet access to Nominatim (`nominatim.openstreetmap.org`) for `/osm` and `/gps`
 * Internet access to Géorisques (`georisques.gouv.fr`) for `/georisque`
@@ -204,6 +204,8 @@ CHANNEL_INDEX=2
 CHANNEL_NAME=search
 
 SEARXNG_URL=http://core:8080/search
+OLLAMA_URL=http://ollama:11434/api/chat
+OLLAMA_MODEL=qwen3:1.7b
 
 CITY=Rouen, France
 TZ_NAME=Europe/Paris
@@ -221,6 +223,8 @@ RECONNECT_DELAY_SECONDS=10
 | `CHANNEL_INDEX` | Channel index monitored by the bot (**required**) | `2` |
 | `CHANNEL_NAME` | Human-readable channel name (logs only) | `search` |
 | `SEARXNG_URL` | SearXNG search endpoint | `http://core:8080/search` |
+| `OLLAMA_URL` | Ollama chat API endpoint | `http://ollama:11434/api/chat` |
+| `OLLAMA_MODEL` | Model used for LLM requests | `qwen3:1.7b` |
 | `CITY` | Local city added to searches and OSM lookups | `Paris, France` |
 | `TZ_NAME` | Time zone used for date and time in prompts | `Europe/Paris` |
 | `GITHUB_URL` | Link returned by `/github` | repository URL |
@@ -296,18 +300,18 @@ The bot only handles **text messages** received on the channel set by `CHANNEL_I
 
 ### Web search (`/search` or plain text)
 
-1. **Query generation:** Vireonix receives the question, the city and the current date/time, and produces a concise search query.
+1. **Query generation:** Ollama receives the question, the city and the current date/time, and produces a concise search query.
 2. **Search:** the query is sent to SearXNG and the top results are used as context.
-3. **Answer:** Vireonix answers in French, directly and concisely, without inventing information. The bot truncates the result to 200 characters.
+3. **Answer:** Ollama answers in French, directly and concisely, without inventing information. The bot truncates the result to 200 characters.
 
-If Vireonix is unreachable, the bot falls back to the raw question for the search, or returns an excerpt of the results.
+If Ollama is unreachable, the bot falls back to the raw question for the search, or returns an excerpt of the results.
 
 ### Place lookup (`/osm`)
 
 1. **Position:** the bot tries to read the sender node's GPS position from the Meshtastic interface.
 2. **Nearby search:** if a position is known, Nominatim is queried around it with growing radii (1 km, 5 km, 20 km); the closest result is kept.
 3. **Fallback search:** without a position, or if nothing was found nearby, SearXNG is queried with `place + city`.
-4. **Name extraction:** Vireonix extracts the real place name from the SearXNG results (`NONE` if it finds nothing, in which case the user's text is used).
+4. **Name extraction:** Ollama extracts the real place name from the SearXNG results (`NONE` if it finds nothing, in which case the user's text is used).
 5. **OpenStreetMap:** Nominatim is queried with `name, city`.
 6. **Formatting:** the bot builds the structured message itself, without the LLM, so name, address and GPS coordinates are never altered.
 
@@ -362,7 +366,7 @@ meshtastic_search_bot/
 │   └── generate_answer_from_searxng.md
 ├── tool/
 │   ├── __init__.py
-│   ├── vireonix.py          # LLM client
+│   ├── ollama.py            # Ollama LLM client
 │   ├── searXng.py           # SearXNG client
 │   ├── OpenStreetMap.py     # Nominatim client
 │   ├── Georisques.py        # Géorisques client (/georisque)
