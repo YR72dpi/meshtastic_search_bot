@@ -7,7 +7,7 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3:1.7b")
 OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", "180"))
 
 
-def call_ollama(prompt: str, response_format: dict | None = None) -> str:
+def call_ollama(prompt: str) -> str:
     print("[BOT] Appel : call_ollama", flush=True)
     payload = {
         "model": OLLAMA_MODEL,
@@ -17,8 +17,6 @@ def call_ollama(prompt: str, response_format: dict | None = None) -> str:
         "think": False,
         "keep_alive": "30m",
     }
-    if response_format:
-        payload["format"] = response_format
     response = requests.post(OLLAMA_URL, json=payload, timeout=OLLAMA_TIMEOUT)
     response.raise_for_status()
     result = response.json()["message"]["content"].strip()

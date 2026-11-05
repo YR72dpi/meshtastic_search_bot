@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import json
 import os
 
 from tool.ollama import call_ollama
@@ -22,7 +21,7 @@ from tool.searXng import search_searxng
 from tool.OpenStreetMap import search_place_data, reverse_geocode
 from tool.Georisques import georisque_lookup
 from tool.utils import load_prompt, excerpt_ending_with_period
-from tool.Emergency import get_all_case, get_cas_gestes
+from tool.Emergency import find_case, get_cas_gestes
 
 CITY = os.getenv("CITY", "Paris, France")
 MAX_MESSAGE_LENGTH = 199
@@ -251,29 +250,15 @@ def get_position(position=None) -> str :
         message += f"\n🏠 {format_address(place)}"
     return message
 
-def emergency(arg) -> str :
+def emergency(arg: str) -> str:
     print("[BOT] Appel : emergency", flush=True)
-    emergency_case = get_all_case()
-    prompt = load_prompt(
-            "determine_assistance",
-            user_case=arg,
-            emergency_case=emergency_case,
-        )
-    # Sortie structurée : Ollama est contraint de renvoyer {"numero": <entier>}
-    raw = call_ollama(
-        prompt,
-        response_format={
-            "type": "object",
-            "properties": {"numero": {"type": "integer"}},
-            "required": ["numero"],
-        },
-    )
-    try:
-        numero = int(json.loads(raw)["numero"])
-        return get_cas_gestes(numero)
-    except (ValueError, KeyError, TypeError, FileNotFoundError) as e:
-        print(f"[BOT] Numéro de cas invalide ({raw!r}): {e}", flush=True)
+    if not arg:
+        return "❌ Usage : /emergency [situation]"
+
+    numero = find_case(arg)
+    if numero is None:
         return "❌ Aucun cas correspondant. Appelle le 15 ou le 112."
+    return get_cas_gestes(numero)
 
 
 def answer_question(question: str, position=None) -> list[str]:
