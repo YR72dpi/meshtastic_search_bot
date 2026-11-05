@@ -221,6 +221,7 @@ def parse_command(text: str) -> tuple[str, str]:
 
 def split_message(message: str) -> list[str]:
     """Découpe un message en morceaux de moins de 200 caractères."""
+    print("[BOT] Appel : split_message", flush=True)
     messages = []
     while message:
         if len(message) <= MAX_MESSAGE_LENGTH:
