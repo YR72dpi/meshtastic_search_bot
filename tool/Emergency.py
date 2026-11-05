@@ -9,11 +9,11 @@ from pathlib import Path
 FIRST_AID_DIR = Path(__file__).resolve().parent.parent / "emergency" / "first-aid"
 INDEX_PATH = FIRST_AID_DIR / "cas.json"
 
-MIN_WORD_LENGTH = 3
+MIN_WORD_LENGTH = 4
 # Racinisation par préfixe : "etouffe" et "etouffement" -> "etouff"
 STEM_LENGTH = 6
 # Champs des fichiers de cas indexés : les plus porteurs de sens
-INDEXED_FIELDS = ("titre", "titreCourt", "punchline", "metaDescription", "requetes", "gestes")
+INDEXED_FIELDS = ("titre", "titreCourt", "requetes", "gestes")
 
 _WORD = re.compile(r"\w+")
 
