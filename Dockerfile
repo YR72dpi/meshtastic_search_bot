@@ -11,5 +11,8 @@ COPY bot.py .
 
 COPY prompt/ ./prompt
 COPY tool/ ./tool
+COPY emergency/ ./emergency
+
+RUN python ./emergency/download_aid.py
 
 CMD ["python", "-u", "main.py"]

@@ -21,6 +21,7 @@ from tool.searXng import search_searxng
 from tool.OpenStreetMap import search_place_data, reverse_geocode
 from tool.Georisques import georisque_lookup
 from tool.utils import load_prompt, excerpt_ending_with_period
+from tool.Emergency import get_all_case, get_cas_gestes
 
 CITY = os.getenv("CITY", "Paris, France")
 
@@ -230,6 +231,19 @@ def get_position(position=None) -> str :
         message += f"\n🏠 {format_address(place)}"
     return message
 
+def emergency(arg) -> str :
+    emergency_case = get_all_case()
+    prompt = load_prompt(
+            "determine_assistance",
+            user_case=arg,
+            emergency_case=emergency_case,
+        )
+
+    # numero de l'assistance
+    query = call_vireonix(prompt).strip()
+    return get_cas_gestes()
+
+
 def answer_question(question: str, position=None) -> str:
     print("[BOT] Appel : answer_question", flush=True)
 
@@ -246,6 +260,9 @@ def answer_question(question: str, position=None) -> str:
 
     if command == "/georisque":
         return georisque_lookup()
+
+    if command == "/emergency":
+        return emergency(arg)
 
     if command == "/hamrelay" :
         return ham_relay()
