@@ -4,13 +4,15 @@
 
 A lightweight **Meshtastic Internet assistant**. Nodes on a Meshtastic network can ask questions or look up places and receive short answers suited to LoRa.
 
-The bot listens on a dedicated channel and offers two data sources:
+The bot listens on a dedicated channel and offers three data sources:
 
 * 🔎 **Web search**: Ollama builds an optimized query, [SearXNG](https://github.com/searxng/searxng) searches the web, and Ollama summarizes the results.
 * 🗺️ **OpenStreetMap**: name, address and GPS position of a place, through Nominatim, prioritizing results close to the requesting node when its GPS position is known.
+* 🚑 **First aid**: the bot can suggest a relevant emergency case from a downloaded dataset published by [Avant les secours / Odersa](https://avantlessecours.odersa.org/), then return the associated steps (gestes) in a numbered list.
 
 > 🌐 **Meshtastic → LLM → SearXNG → LLM → Meshtastic**
 > 🗺️ **Meshtastic → SearXNG → LLM → OpenStreetMap → Meshtastic**
+> 🚑 **Meshtastic → /emergency → local first-aid dataset → Meshtastic**
 
 ---
 
@@ -25,10 +27,11 @@ You have to stop the docker service to get the connection back.
 ## ✨ Features
 
 * 📡 Listens to a dedicated Meshtastic channel
-* 💬 Simple commands: `/help`, `/osm`, `/georisque`, `/gps`, `/hamrelay`, `/search`, `/github`
+* 💬 Simple commands: `/help`, `/osm`, `/georisque`, `/gps`, `/hamrelay`, `/search`, `/emergency`, `/github`
 * 🔎 Web search through a self-hostable SearXNG instance
 * 🤖 Local Ollama model for query generation, place-name extraction and answer synthesis
 * 🗺️ Structured place info from OpenStreetMap (name, address, GPS, phone, opening hours)
+* 🚑 Emergency guidance from the local "Avant les secours" dataset, matching the closest first-aid case to a user request
 * ⚠️ Commune-level risk information from the French Géorisques API
 * 🟢 `/osm` prefers places that are currently open (from the OSM `opening_hours` tag, in the `TZ_NAME` time zone); places without opening hours are kept, and if every match is known to be closed the closest one is returned and flagged `(fermé)`
 * 📍 Distance-aware `/osm` search: uses the sender's GPS position (when known) and expands the search radius (1 km → 5 km → 20 km) until a match is found, keeping the closest result
@@ -52,6 +55,7 @@ You have to stop the docker service to get the connection back.
 | `/gps` | 🧭 Your GPS coordinates (`Long` / `Lat`) and the nearest address (reverse geocoding) | `/gps` |
 | `/hamrelay` | 📻 Amateur radio repeaters around Rouen (static text, hard-coded in `bot.py`) | `/hamrelay` |
 | `/search [question]` | 🔎 Web search summarized by the LLM | `/search latest Raspberry Pi model` |
+| `/emergency [situation]` | 🚑 Finds the closest emergency case and returns its numbered steps (first aid) | `/emergency saignement abondant` |
 | `/github` | 🐙 Link to the repository | `/github` |
 | *any other text* | 🔎 Handled like `/search` | `weather in Rouen today?` |
 
@@ -95,6 +99,36 @@ Coordinates are rounded to 5 decimals (about 1 m). The `🏠` line is omitted if
 ```text
 Le Raspberry Pi 5 existe notamment en versions 2, 4, 8 et 16 Go de RAM.
 ```
+
+### Example: `/emergency`
+
+```text
+/emergency saignement abondant
+```
+
+```text
+1. Comprimer directement la plaie
+2. Se protéger les mains
+3. Allonger la victime
+4. Alerter sans lâcher
+5. Ne jamais relâcher la compression
+```
+
+The emergency module compares the user request to a local index of cases and returns the closest match. The dataset is downloaded once at startup by `emergency/download_aid.py` from `https://avantlessecours.odersa.org/` and stored under `emergency/first-aid/`.
+
+---
+
+## 🚑 First-aid data source
+
+The bot can provide first-aid guidance thanks to the Open Data documents published by Odersa on `https://avantlessecours.odersa.org/`.
+
+The script [`emergency/download_aid.py`](/home/ylan/development/meshtastic_search_bot/emergency/download_aid.py) downloads:
+
+* the case index (`cas.json`),
+* each case file in the local `emergency/first-aid/` directory,
+* and the list of steps (`gestes`) used by the `/emergency` command.
+
+This keeps the bot autonomous even without a network call during the rescue workflow. The command computes a TF-IDF similarity between the sent request and the indexed cases, then returns the most relevant emergency procedure.
 
 ---
 
