@@ -258,7 +258,7 @@ def emergency(arg) -> str :
             user_case=arg,
             emergency_case=emergency_case,
         )
-
+    print(prompt)
     # numero de l'assistance
     query = call_vireonix(prompt).strip()
     return get_cas_gestes(query)
