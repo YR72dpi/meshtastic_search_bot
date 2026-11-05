@@ -186,13 +186,13 @@ def help_message(position=None) -> str:
     position_status = "détectée ✅" if position else "inconnue ❌"
     return (
         f"🏙️ {CITY}\n"
-        f"📍 Position {position_status}\n\n"
-
+        f"📍 Pos {position_status}\n\n"
         "🤖 Commandes :\n"
-        "📍 /gps : coordonnées GPS\n"
-        "⚠️ /georisque : risques commune\n"
-        "🗺️ /osm [lieu] : infos OSM\n"
-        "🔎 /search [question] : recherche Web\n"
+        "📍 /gps : coordonnées\n"
+        "⚠️ /geo : risques locale\n"
+        "🗺️ /osm [lieu] : infos lieu\n"
+        "🔎 /search [q] : recherche\n"
+        "🚑 /emergency [situation] : premiers secours\n"
         "🐙 /github : dépôt"
     )
 
