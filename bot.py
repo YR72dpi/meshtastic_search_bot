@@ -232,6 +232,7 @@ def get_position(position=None) -> str :
     return message
 
 def emergency(arg) -> str :
+    print("[BOT] Appel : emergency", flush=True)
     emergency_case = get_all_case()
     prompt = load_prompt(
             "determine_assistance",
@@ -241,7 +242,7 @@ def emergency(arg) -> str :
 
     # numero de l'assistance
     query = call_vireonix(prompt).strip()
-    return get_cas_gestes()
+    return get_cas_gestes(query)
 
 
 def answer_question(question: str, position=None) -> str:
