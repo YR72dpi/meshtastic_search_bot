@@ -14,6 +14,7 @@ services:
       GEORISQUES_CACHE_TTL: "${GEORISQUES_CACHE_TTL:-604800}"
       OLLAMA_URL: "${OLLAMA_URL:-http://ollama:11434/api/chat}"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen3:1.7b}"
+      OLLAMA_TIMEOUT: "${OLLAMA_TIMEOUT:-180}"
       SEARXNG_URL: "${SEARXNG_URL}"
     depends_on:
       core:

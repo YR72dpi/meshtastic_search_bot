@@ -225,6 +225,7 @@ RECONNECT_DELAY_SECONDS=10
 | `SEARXNG_URL` | SearXNG search endpoint | `http://core:8080/search` |
 | `OLLAMA_URL` | Ollama chat API endpoint | `http://ollama:11434/api/chat` |
 | `OLLAMA_MODEL` | Model used for LLM requests | `qwen3:1.7b` |
+| `OLLAMA_TIMEOUT` | LLM request timeout in seconds | `180` |
 | `CITY` | Local city added to searches and OSM lookups | `Paris, France` |
 | `TZ_NAME` | Time zone used for date and time in prompts | `Europe/Paris` |
 | `GITHUB_URL` | Link returned by `/github` | repository URL |
