@@ -112,5 +112,6 @@ def find_case(query: str) -> int | None:
 # ---------------------------------------------------------------------------
 
 def get_cas_gestes(numero: int) -> str:
-    """Retourne les gestes du cas demandé, un geste par ligne."""
-    return "\n".join(_load_json(FIRST_AID_DIR / f"{numero}.json")["gestes"])
+    """Retourne les gestes du cas demandé, numérotés un par ligne."""
+    gestes = _load_json(FIRST_AID_DIR / f"{numero}.json")["gestes"]
+    return "\n".join(f"{index}. {geste}" for index, geste in enumerate(gestes, start=1))
