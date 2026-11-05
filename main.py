@@ -79,28 +79,29 @@ def on_receive(packet, interface):
         position = get_sender_position(interface, packet)
         print(f"[POS] Position de {sender}: {position}", flush=True)
 
-        answer = answer_question(question, position)
+        answers = answer_question(question, position)
 
-        try:
-            interface.sendText(
-                answer,
-                channelIndex=received_channel,
-                replyId=original_packet_id
-            )
-        except TypeError:
-            # Ancienne version de la lib sans replyId : envoi classique
-            print("[TX] replyId non supporté, envoi sans réponse liée", flush=True)
-            interface.sendText(
-                answer,
-                channelIndex=received_channel
-            )
+        for answer in answers:
+            try:
+                interface.sendText(
+                    answer,
+                    channelIndex=received_channel,
+                    replyId=original_packet_id
+                )
+            except TypeError:
+                # Ancienne version de la lib sans replyId : envoi classique
+                print("[TX] replyId non supporté, envoi sans réponse liée", flush=True)
+                interface.sendText(
+                    answer,
+                    channelIndex=received_channel
+                )
 
-        print(
-            f"[TX] Réponse envoyée sur "
-            f"channel={received_channel} ({SEARCH_CHANNEL_NAME}) "
-            f"en réponse à l'id {original_packet_id}",
-            flush=True
-        )
+            print(
+                f"[TX] Partie de réponse envoyée sur "
+                f"channel={received_channel} ({SEARCH_CHANNEL_NAME}) "
+                f"en réponse à l'id {original_packet_id}",
+                flush=True
+            )
     except Exception as e:
         print(f"[BOT] Erreur: {e}", flush=True)
 

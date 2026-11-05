@@ -24,6 +24,7 @@ from tool.utils import load_prompt, excerpt_ending_with_period
 from tool.Emergency import get_all_case, get_cas_gestes
 
 CITY = os.getenv("CITY", "Paris, France")
+MAX_MESSAGE_LENGTH = 199
 
 # ---------------------------------------------------------------------------
 # Étapes LLM (Vireonix)
@@ -66,7 +67,7 @@ def generate_answer(question: str, context: str) -> str:
         context=context,
     )
     try:
-        return call_vireonix(prompt)[:200]
+        return call_vireonix(prompt)
     except Exception as e:
         print(f"[VIREONIX] Erreur: {e}", flush=True)
         return f"LLM inaccessible. {excerpt_ending_with_period(context)}"
@@ -218,6 +219,23 @@ def parse_command(text: str) -> tuple[str, str]:
     command, _, args = text.partition(" ")
     return command.lower(), args.strip()
 
+def split_message(message: str) -> list[str]:
+    """Découpe un message en morceaux de moins de 200 caractères."""
+    messages = []
+    while message:
+        if len(message) <= MAX_MESSAGE_LENGTH:
+            messages.append(message)
+            break
+
+        boundary = max(
+            message.rfind(" ", 0, MAX_MESSAGE_LENGTH),
+            message.rfind("\n", 0, MAX_MESSAGE_LENGTH),
+        )
+        end = boundary + 1 if boundary > 0 else MAX_MESSAGE_LENGTH
+        messages.append(message[:end])
+        message = message[end:]
+    return messages
+
 def get_position(position=None) -> str :
     print("[BOT] Appel : get_position", flush=True)
     if position is None:
@@ -245,33 +263,28 @@ def emergency(arg) -> str :
     return get_cas_gestes(query)
 
 
-def answer_question(question: str, position=None) -> str:
+def answer_question(question: str, position=None) -> list[str]:
     print("[BOT] Appel : answer_question", flush=True)
 
     command, args = parse_command(question)
 
     if command == "/help":
-        return help_message(position)
+        answer = help_message(position)
+    elif command == "/github":
+        answer = github_message()
+    elif command == "/gps":
+        answer = get_position(position)
+    elif command == "/georisque":
+        answer = georisque_lookup()
+    elif command == "/emergency":
+        answer = emergency(args)
+    elif command == "/hamrelay":
+        answer = ham_relay()
+    elif command == "/osm":
+        answer = osm_lookup(args, position) if args else "❌ Usage : /osm [lieu]"
+    elif command == "/search":
+        answer = basic_search(args) if args else "❌ Usage : /search [question]"
+    else:
+        answer = "❓ Commande inconnue. Tape /help"
 
-    if command == "/github":
-        return github_message()
-
-    if command == "/gps":
-        return get_position(position)
-
-    if command == "/georisque":
-        return georisque_lookup()
-
-    if command == "/emergency":
-        return emergency(args)
-
-    if command == "/hamrelay" :
-        return ham_relay()
-
-    if command == "/osm":
-        return osm_lookup(args, position) if args else "❌ Usage : /osm [lieu]"
-
-    if command == "/search":
-        return basic_search(args) if args else "❌ Usage : /search [question]"
-
-    return "❓ Commande inconnue. Tape /help"
+    return split_message(answer)
