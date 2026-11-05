@@ -230,6 +230,7 @@ RECONNECT_DELAY_SECONDS=10
 | `TZ_NAME` | Time zone used for date and time in prompts | `Europe/Paris` |
 | `GITHUB_URL` | Link returned by `/github` | repository URL |
 | `RECONNECT_DELAY_SECONDS` | Delay before reconnecting | `10` |
+| `SEND_DELAY_SECONDS` | Pause between the parts of a split answer | `5` |
 
 > **Important:** `CHANNEL_INDEX` must match the real Meshtastic channel index. The bot replies on the channel the message was received on.
 

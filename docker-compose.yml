@@ -11,6 +11,7 @@ services:
       CITY: "${CITY}"
       TZ_NAME: "${TZ_NAME:-Europe/Paris}"
       RECONNECT_DELAY_SECONDS: "${RECONNECT_DELAY_SECONDS:-10}"
+      SEND_DELAY_SECONDS: "${SEND_DELAY_SECONDS:-5}"
       GEORISQUES_CACHE_TTL: "${GEORISQUES_CACHE_TTL:-604800}"
       OLLAMA_URL: "${OLLAMA_URL:-http://ollama:11434/api/chat}"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen3:1.7b}"

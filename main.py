@@ -26,6 +26,8 @@ MESHTASTIC_PORT = int(os.getenv("MESHTASTIC_PORT", "4403"))
 SEARCH_CHANNEL_INDEX = int(os.getenv("CHANNEL_INDEX"))
 SEARCH_CHANNEL_NAME = os.getenv("CHANNEL_NAME")
 CITY = os.getenv("CITY", "Paris, France")
+# Pause entre deux parties d'une réponse : la radio LoRa perd les paquets envoyés en rafale
+SEND_DELAY_SECONDS = float(os.getenv("SEND_DELAY_SECONDS", "5"))
 
 def get_sender_position(interface, packet):
     """Retourne (lat, lon) du nœud expéditeur, ou None si inconnue."""
@@ -81,7 +83,9 @@ def on_receive(packet, interface):
 
         answers = answer_question(question, position)
 
-        for answer in answers:
+        for index, answer in enumerate(answers):
+            if index > 0:
+                time.sleep(SEND_DELAY_SECONDS)
             try:
                 interface.sendText(
                     answer,
