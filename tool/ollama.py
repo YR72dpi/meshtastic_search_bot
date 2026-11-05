@@ -7,20 +7,19 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3:1.7b")
 OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", "180"))
 
 
-def call_ollama(prompt: str) -> str:
+def call_ollama(prompt: str, response_format: dict | None = None) -> str:
     print("[BOT] Appel : call_ollama", flush=True)
-    response = requests.post(
-        OLLAMA_URL,
-        json={
-            "model": OLLAMA_MODEL,
-            "messages": [{"role": "user", "content": prompt}],
-            "stream": False,
-            # Évite la longue phase de réflexion de Qwen 3 et garde le modèle chargé
-            "think": False,
-            "keep_alive": "30m",
-        },
-        timeout=OLLAMA_TIMEOUT,
-    )
+    payload = {
+        "model": OLLAMA_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        "stream": False,
+        # Évite la longue phase de réflexion de Qwen 3 et garde le modèle chargé
+        "think": False,
+        "keep_alive": "30m",
+    }
+    if response_format:
+        payload["format"] = response_format
+    response = requests.post(OLLAMA_URL, json=payload, timeout=OLLAMA_TIMEOUT)
     response.raise_for_status()
     result = response.json()["message"]["content"].strip()
     print(f"[OLLAMA] Résultat : {result}", flush=True)

@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import json
 import os
 
 from tool.ollama import call_ollama
@@ -258,10 +259,21 @@ def emergency(arg) -> str :
             user_case=arg,
             emergency_case=emergency_case,
         )
-    print(prompt)
-    # numero de l'assistance
-    query = call_ollama(prompt).strip()
-    return get_cas_gestes(query)
+    # Sortie structurée : Ollama est contraint de renvoyer {"numero": <entier>}
+    raw = call_ollama(
+        prompt,
+        response_format={
+            "type": "object",
+            "properties": {"numero": {"type": "integer"}},
+            "required": ["numero"],
+        },
+    )
+    try:
+        numero = int(json.loads(raw)["numero"])
+        return get_cas_gestes(numero)
+    except (ValueError, KeyError, TypeError, FileNotFoundError) as e:
+        print(f"[BOT] Numéro de cas invalide ({raw!r}): {e}", flush=True)
+        return "❌ Aucun cas correspondant. Appelle le 15 ou le 112."
 
 
 def answer_question(question: str, position=None) -> list[str]:
