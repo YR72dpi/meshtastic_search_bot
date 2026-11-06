@@ -24,7 +24,11 @@ from tool.utils import load_prompt, excerpt_ending_with_period
 from tool.Emergency import find_case, get_cas_gestes
 
 CITY = os.getenv("CITY", "Paris, France")
-MAX_MESSAGE_LENGTH = 199
+# Meshtastic packets are limited by UTF-8 byte length, not by Python character count.
+# Emojis and accented characters quickly exceed the radio payload even when the
+# string looks short in characters, so keep a conservative margin below the
+# protocol limit.
+MAX_MESSAGE_LENGTH = 180
 
 # ---------------------------------------------------------------------------
 # Étapes LLM (Ollama)
@@ -220,11 +224,11 @@ def parse_command(text: str) -> tuple[str, str]:
     return command.lower(), args.strip()
 
 def split_message(message: str) -> list[str]:
-    """Découpe un message en morceaux de moins de 200 caractères."""
+    """Découpe un message pour rester sous la limite UTF-8 du paquet radio."""
     print("[BOT] Appel : split_message", flush=True)
     messages = []
     while message:
-        if len(message) <= MAX_MESSAGE_LENGTH:
+        if len(message.encode("utf-8")) <= MAX_MESSAGE_LENGTH:
             messages.append(message)
             break
 
@@ -232,9 +236,20 @@ def split_message(message: str) -> list[str]:
             message.rfind(" ", 0, MAX_MESSAGE_LENGTH),
             message.rfind("\n", 0, MAX_MESSAGE_LENGTH),
         )
-        end = boundary + 1 if boundary > 0 else MAX_MESSAGE_LENGTH
-        messages.append(message[:end])
-        message = message[end:]
+        if boundary <= 0:
+            boundary = MAX_MESSAGE_LENGTH
+
+        # Ne jamais dépasser la limite en octets après encodage UTF-8.
+        while boundary > 1 and len(message[:boundary].encode("utf-8")) > MAX_MESSAGE_LENGTH:
+            boundary -= 1
+
+        chunk = message[:boundary].rstrip()
+        if not chunk:
+            chunk = message[:MAX_MESSAGE_LENGTH]
+            boundary = MAX_MESSAGE_LENGTH
+
+        messages.append(chunk)
+        message = message[boundary:].lstrip()
     return messages
 
 def get_position(position=None) -> str :
