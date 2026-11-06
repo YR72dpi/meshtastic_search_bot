@@ -187,17 +187,17 @@ def osm_lookup(place_name_user: str, position=None) -> str:
 
 def help_message(position=None) -> str:
     print("[BOT] Appel : help_message", flush=True)
-    position_status = "détectée ✅" if position else "inconnue ❌"
+    position_status = "detectee" if position else "inconnue"
     return (
-        f"🏙️ {CITY}\n"
-        f"📍 Pos {position_status}\n\n"
-        "🤖 Commandes :\n"
-        "📍 /gps : coordonnées\n"
-        "⚠️ /geo : risques locale\n"
-        "🗺️ /osm [lieu] : infos lieu\n"
-        "🔎 /search [q] : recherche\n"
-        "🚑 /emergency [situation] : premiers secours\n"
-        "🐙 /github : dépôt"
+        f"{CITY}\n"
+        f"Pos {position_status}\n"
+        "Cmds:\n"
+        "/gps: coordonnees\n"
+        "/geo: risques locale\n"
+        "/osm [lieu]: infos lieu\n"
+        "/search [q]: recherche\n"
+        "/emergency [situation]: premiers secours\n"
+        "/github: depot"
     )
 
 def github_message() -> str:
@@ -224,33 +224,52 @@ def parse_command(text: str) -> tuple[str, str]:
     return command.lower(), args.strip()
 
 def split_message(message: str) -> list[str]:
-    """Découpe un message pour rester sous la limite UTF-8 du paquet radio."""
+    """Découpe un message en morceaux sans couper les mots si possible."""
     print("[BOT] Appel : split_message", flush=True)
-    messages = []
-    while message:
-        if len(message.encode("utf-8")) <= MAX_MESSAGE_LENGTH:
-            messages.append(message)
+
+    if not message:
+        return []
+
+    parts = []
+    remaining = message
+
+    while remaining:
+        if len(remaining.encode("utf-8")) <= MAX_MESSAGE_LENGTH:
+            parts.append(remaining)
             break
 
-        boundary = max(
-            message.rfind(" ", 0, MAX_MESSAGE_LENGTH),
-            message.rfind("\n", 0, MAX_MESSAGE_LENGTH),
-        )
-        if boundary <= 0:
-            boundary = MAX_MESSAGE_LENGTH
+        candidate = remaining[:MAX_MESSAGE_LENGTH]
+        newline_index = candidate.rfind("\n")
+        if newline_index > 0:
+            boundary = newline_index + 1
+        else:
+            space_index = candidate.rfind(" ")
+            if space_index > 0:
+                boundary = space_index + 1
+            else:
+                boundary = MAX_MESSAGE_LENGTH
 
-        # Ne jamais dépasser la limite en octets après encodage UTF-8.
-        while boundary > 1 and len(message[:boundary].encode("utf-8")) > MAX_MESSAGE_LENGTH:
-            boundary -= 1
-
-        chunk = message[:boundary].rstrip()
+        chunk = remaining[:boundary].rstrip()
         if not chunk:
-            chunk = message[:MAX_MESSAGE_LENGTH]
+            chunk = remaining[:MAX_MESSAGE_LENGTH].rstrip()
             boundary = MAX_MESSAGE_LENGTH
 
-        messages.append(chunk)
-        message = message[boundary:].lstrip()
-    return messages
+        # Si le chunk est encore trop long, on coupe au dernier espace possible.
+        while len(chunk.encode("utf-8")) > MAX_MESSAGE_LENGTH and " " in chunk:
+            space_index = chunk.rfind(" ")
+            if space_index <= 0:
+                break
+            chunk = chunk[:space_index].rstrip()
+            boundary = len(chunk)
+
+        if not chunk:
+            chunk = remaining[:MAX_MESSAGE_LENGTH].rstrip()
+            boundary = MAX_MESSAGE_LENGTH
+
+        parts.append(chunk)
+        remaining = remaining[boundary:].lstrip()
+
+    return parts
 
 def get_position(position=None) -> str :
     print("[BOT] Appel : get_position", flush=True)
