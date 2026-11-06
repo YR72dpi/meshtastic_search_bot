@@ -191,7 +191,7 @@ def help_message(position=None) -> str:
     return (
         f"{CITY}\n"
         f"Pos {position_status}\n"
-        "Cmds:\n"
+        "\n"
         "/gps: coordonnees\n"
         "/geo: risques locale\n"
         "/osm [lieu]: infos lieu\n"
