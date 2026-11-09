@@ -89,6 +89,10 @@ def basic_search(question: str) -> str:
     # return generate_answer(question, search_result)
 
     search_result = search_searxng(question)
+
+    if not search_result :
+        return "Aucune réponse trouvée sur le web. (0 résultats de searXNG)"
+
     return generate_answer(question, search_result)
 
 
