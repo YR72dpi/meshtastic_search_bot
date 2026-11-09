@@ -17,6 +17,9 @@ def search_searxng(query: str) -> str:
                     "q": query,
                     "format": "json"
                 },
+                headers={
+                    "User-Agent": "meshtastic-search-bot/1.0 (+https://github.com/YR72dpi/meshtastic_search_bot)"
+                },
                 timeout=15
             )
             response.raise_for_status()
