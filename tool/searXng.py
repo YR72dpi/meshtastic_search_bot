@@ -2,7 +2,7 @@ import os
 import requests
 
 SEARXNG_URL = os.getenv("SEARXNG_URL")
-SEARCH_RESULTS_LIMIT = 3
+SEARCH_RESULTS_LIMIT = 5
 
 def search_searxng(query: str) -> str:
     print(f"[BOT] Appel : search_searxng")
