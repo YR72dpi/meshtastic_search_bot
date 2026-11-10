@@ -20,15 +20,15 @@ from tool.ollama import call_ollama
 from tool.searXng import search_searxng
 from tool.OpenStreetMap import search_place_data, reverse_geocode
 from tool.Georisques import georisque_lookup
-from tool.utils import load_prompt, excerpt_ending_with_period
+from tool.utils import (
+    load_prompt,
+    excerpt_ending_with_period,
+    parse_command,
+    split_message,
+)
 from tool.Emergency import find_case, get_cas_gestes
 
 CITY = os.getenv("CITY", "Paris, France")
-# Meshtastic packets are limited by UTF-8 byte length, not by Python character count.
-# Emojis and accented characters quickly exceed the radio payload even when the
-# string looks short in characters, so keep a conservative margin below the
-# protocol limit.
-MAX_MESSAGE_LENGTH = 180
 
 # ---------------------------------------------------------------------------
 # Étapes LLM (Ollama)
@@ -218,63 +218,6 @@ def ham_relay() -> str:
         f"TX 430.0500 \n RX 431.6500 \n Shift +1.6000 \n FM \n CTCSS : 94.8"
     )
 
-def parse_command(text: str) -> tuple[str, str]:
-    print("[BOT] Appel : parse_command", flush=True)
-    """'/osm café Moby' -> ('/osm', 'café Moby'). Sans commande -> ('', text)."""
-    text = text.strip()
-    if not text.startswith("/"):
-        return "", text
-    command, _, args = text.partition(" ")
-    return command.lower(), args.strip()
-
-def split_message(message: str) -> list[str]:
-    """Découpe un message en morceaux sans couper les mots si possible."""
-    print("[BOT] Appel : split_message", flush=True)
-
-    if not message:
-        return []
-
-    parts = []
-    remaining = message
-
-    while remaining:
-        if len(remaining.encode("utf-8")) <= MAX_MESSAGE_LENGTH:
-            parts.append(remaining)
-            break
-
-        candidate = remaining[:MAX_MESSAGE_LENGTH]
-        newline_index = candidate.rfind("\n")
-        if newline_index > 0:
-            boundary = newline_index + 1
-        else:
-            space_index = candidate.rfind(" ")
-            if space_index > 0:
-                boundary = space_index + 1
-            else:
-                boundary = MAX_MESSAGE_LENGTH
-
-        chunk = remaining[:boundary].rstrip()
-        if not chunk:
-            chunk = remaining[:MAX_MESSAGE_LENGTH].rstrip()
-            boundary = MAX_MESSAGE_LENGTH
-
-        # Si le chunk est encore trop long, on coupe au dernier espace possible.
-        while len(chunk.encode("utf-8")) > MAX_MESSAGE_LENGTH and " " in chunk:
-            space_index = chunk.rfind(" ")
-            if space_index <= 0:
-                break
-            chunk = chunk[:space_index].rstrip()
-            boundary = len(chunk)
-
-        if not chunk:
-            chunk = remaining[:MAX_MESSAGE_LENGTH].rstrip()
-            boundary = MAX_MESSAGE_LENGTH
-
-        parts.append(chunk)
-        remaining = remaining[boundary:].lstrip()
-
-    return parts
-
 def get_position(position=None) -> str :
     print("[BOT] Appel : get_position", flush=True)
     if position is None:
@@ -297,7 +240,6 @@ def emergency(arg: str) -> str:
     if numero is None:
         return "❌ Aucun cas correspondant. Appelle le 15 ou le 112."
     return get_cas_gestes(numero)
-
 
 def answer_question(question: str, position=None) -> list[str]:
     print("[BOT] Appel : answer_question", flush=True)
