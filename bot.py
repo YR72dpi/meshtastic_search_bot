@@ -241,9 +241,27 @@ def emergency(arg: str) -> str:
         return "❌ Aucun cas correspondant. Appelle le 15 ou le 112."
     return get_cas_gestes(numero)
 
+def translate(args: str) -> str:
+    print("[BOT] Appel : translate", flush=True)
+    fromToLanguage = args.split()[:2]
+    sentence = ' '.join(args.split()[2:])
+    
+    prompt = load_prompt(
+        "translate_answer",
+        fromLanguage=fromToLanguage[0],
+        toLanguage=fromToLanguage[1],
+        sentence=sentence
+    )
+
+    try:
+        return call_ollama(prompt)
+    except Exception as e:
+        print(f"[OLLAMA] Erreur: {e}", flush=True)
+        return f"LLM inaccessible."
+
+
 def answer_question(question: str, position=None) -> list[str]:
     print("[BOT] Appel : answer_question", flush=True)
-
     command, args = parse_command(question)
 
     if command == "/help":
@@ -262,6 +280,8 @@ def answer_question(question: str, position=None) -> list[str]:
         answer = osm_lookup(args, position) if args else "❌ Usage : /osm [lieu]"
     elif command == "/search":
         answer = basic_search(args) if args else "❌ Usage : /search [question]"
+    elif command == "/translate":
+        answer = translate(args)
     else:
         answer = "❓ Commande inconnue. Tape /help"
 
