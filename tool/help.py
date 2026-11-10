@@ -71,10 +71,8 @@ def normalize_command(raw: str) -> str:
         return "help"
     text = raw.strip().lower().lstrip("/")
     aliases = {
-        "geo": "georisque",
         "georisque": "georisque",
         "hamrelay": "hamrelay",
-        "ham": "hamrelay",
         "github": "github",
         "gps": "gps",
         "osm": "osm",
@@ -82,9 +80,6 @@ def normalize_command(raw: str) -> str:
         "emergency": "emergency",
         "help": "help",
         "translate": "translate",
-        "all": "all",
-        "toutes": "all",
-        "liste": "all",
     }
     return aliases.get(text, text)
 
