@@ -30,4 +30,4 @@ Traduire le texte fourni de sa langue source vers la langue cible demandée.
 # Entrée
 Langue de d'origine : [fromLanguage]
 Langue cible : [toLanguage]
-Texte : [sentence]
+Texte : "[sentence]"
