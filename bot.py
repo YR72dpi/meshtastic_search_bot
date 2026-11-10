@@ -20,6 +20,7 @@ from tool.ollama import call_ollama
 from tool.searXng import search_searxng
 from tool.OpenStreetMap import search_place_data, reverse_geocode
 from tool.Georisques import georisque_lookup
+from tool.help import current_help, command_help
 from tool.utils import (
     load_prompt,
     excerpt_ending_with_period,
@@ -191,18 +192,7 @@ def osm_lookup(place_name_user: str, position=None) -> str:
 
 def help_message(position=None) -> str:
     print("[BOT] Appel : help_message", flush=True)
-    position_status = "detectee" if position else "inconnue"
-    return (
-        f"{CITY}\n"
-        f"Pos {position_status}\n"
-        "\n"
-        "/gps: coordonnees\n"
-        "/geo: risques locale\n"
-        "/osm [lieu]: infos lieu\n"
-        "/search [q]: recherche\n"
-        "/emergency [situation]: premiers secours\n"
-        "/github: depot"
-    )
+    return current_help(position)
 
 def github_message() -> str:
     print("[BOT] Appel : github_message", flush=True)
@@ -265,7 +255,7 @@ def answer_question(question: str, position=None) -> list[str]:
     command, args = parse_command(question)
 
     if command == "/help":
-        answer = help_message(position)
+        answer = command_help(args) if args else help_message(position)
     elif command == "/github":
         answer = github_message()
     elif command == "/gps":
