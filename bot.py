@@ -32,7 +32,7 @@ from tool.Emergency import find_case, get_cas_gestes
 CITY = os.getenv("CITY", "Paris, France")
 
 # ---------------------------------------------------------------------------
-# Étapes LLM (Ollama)
+# Étapes LLM (routeur call_llm : Vireonix puis Ollama)
 # ---------------------------------------------------------------------------
 
 def extract_place_name(search_result: str) -> str:
