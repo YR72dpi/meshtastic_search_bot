@@ -1,6 +1,8 @@
 # Architecture et fonctionnement
 
-Ce document décrit le fonctionnement interne du bot Meshtastic Search Bot, avec l’accent sur le système LLM et le mécanisme de bascule Vireonix → Ollama.
+Ce document décrit le fonctionnement interne du bot Meshtastic Search Bot, avec l’accent sur la logique métier, l’architecture du pipeline et le mécanisme de bascule Vireonix → Ollama.
+
+Il s’agit de la version technique du projet : algorithmes, composants, flux de données et technologies utilisées.
 
 ## 1. Vue d’ensemble
 
@@ -16,7 +18,35 @@ Les composants principaux sont :
 - Ollama : fallback local
 - Vireonix : fournisseur prioritaire, si disponible
 
-## 2. La couche LLM
+## 2. Stack technique
+
+```text
+Application layer
+├── Python 3
+├── Meshtastic TCP interface
+├── requests
+├── Docker Compose
+├── prompt templates (Markdown)
+└── custom command parsing
+
+External services
+├── Vireonix (preferred LLM provider, OpenAI-compatible API)
+├── Ollama (local fallback LLM)
+├── SearXNG (web search JSON API)
+├── OpenStreetMap / Nominatim (geocoding and reverse geocoding)
+├── Géorisques API (French risk lookup)
+└── Meshtastic radio network
+```
+
+Les responsabilités sont séparées :
+
+- `bot.py` : orchestration des commandes
+- `tool/llm.py` : couche d’abstraction LLM
+- `tool/llm_providers/*.py` : clients fournisseur
+- `tool/*.py` : intégrations de services externes
+- `prompt/*.md` : modèles de prompts
+
+## 3. La couche LLM
 
 Le point d’entrée unique est :
 
@@ -46,7 +76,27 @@ tool/
 │   └── ollama.py           # client Ollama
 ```
 
-## 3. Pourquoi ce design ?
+### Diagramme de décision LLM
+
+```mermaid
+flowchart TD
+    A["Appel call_llm(prompt)"] --> B{"Vireonix configuré ?"}
+    B -->|Non| C["Essai Ollama"]
+    B -->|Oui| D["Tentative Vireonix"]
+    D --> E{"Réponse valide ?"}
+    E -->|Oui| F["Retourner réponse"]
+    E -->|Non| G{"Erreur retryable ? 429 / 5xx"}
+    G -->|Oui| H["Retry Vireonix"]
+    G -->|Non| C
+    H --> I{"2e essai réussi ?"}
+    I -->|Oui| F
+    I -->|Non| C
+    C --> J{"Ollama répond ?"}
+    J -->|Oui| K["Retourner réponse Ollama"]
+    J -->|Non| L["Erreur finale: aucun fournisseur disponible"]
+```
+
+## 4. Pourquoi ce design ?
 
 Le code a été structuré pour que les fonctions métier ne sachent pas lequel des LLM est utilisé.
 

@@ -2,34 +2,24 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
-A lightweight **Meshtastic Internet assistant**. Nodes on a Meshtastic network can ask questions or look up places and receive short answers suited to LoRa.
+A lightweight **Meshtastic Internet assistant**. Nodes on a Meshtastic network can ask questions, look up places, and receive short answers tailored for LoRa radio constraints.
 
 The bot listens on a dedicated channel and offers three data sources:
 
-* 🔎 **Web search**: Ollama builds an optimized query, [SearXNG](https://github.com/searxng/searxng) searches the web, and Ollama summarizes the results.
+* 🔎 **Web search**: an LLM builds an optimized query, [SearXNG](https://github.com/searxng/searxng) searches the web, and the LLM summarizes the results.
 * 🗺️ **OpenStreetMap**: name, address and GPS position of a place, through Nominatim, prioritizing results close to the requesting node when its GPS position is known.
-* 🚑 **First aid**: the bot can suggest a relevant emergency case from a downloaded dataset published by [Avant les secours / Odersa](https://avantlessecours.odersa.org/), then return the associated steps (gestes) in a numbered list.
+* 🚑 **First aid**: the bot can suggest a relevant emergency case from a dataset published by [Avant les secours / Odersa](https://avantlessecours.odersa.org/), then return the associated steps in a numbered list.
 
-> 🌐 **Meshtastic → LLM → SearXNG → LLM → Meshtastic**
-> 🗺️ **Meshtastic → SearXNG → LLM → OpenStreetMap → Meshtastic**
-> 🚑 **Meshtastic → /emergency → local first-aid dataset → Meshtastic**
+For the internal design, algorithms and technologies, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
-## ⚠️ About TCP connection
-
-As things stand, because of the TCP connection, the node will not be accessible from a client application.
-
-You have to stop the docker service to get the connection back.
-
----
-
-## ✨ Features
+# ✨ Features
 
 * 📡 Listens to a dedicated Meshtastic channel
 * 💬 Simple commands: `/help`, `/osm`, `/georisque`, `/gps`, `/hamrelay`, `/search`, `/emergency`, `/github`
 * 🔎 Web search through a self-hostable SearXNG instance
-* 🤖 Local Ollama model for query generation, place-name extraction and answer synthesis
+* 🤖 LLM for query generation, place-name extraction and answer synthesis, with automatic fallback (Vireonix first, local Ollama otherwise)
 * 🗺️ Structured place info from OpenStreetMap (name, address, GPS, phone, opening hours)
 * 🚑 Emergency guidance from the local "Avant les secours" dataset, matching the closest first-aid case to a user request
 * ⚠️ Commune-level risk information from the French Géorisques API
@@ -38,14 +28,14 @@ You have to stop the docker service to get the connection back.
 * 🧭 `/gps` returns the sender's coordinates and a nearby address (reverse geocoding via Nominatim)
 * 🏙️ Configurable local city added to searches
 * 🕐 Local date and time available in prompts
-* ✂️ Answers limited to 200 characters
+* ✂️ Answers limited to 180 characters
 * ↩️ Replies are linked to the original message (`replyId`) when the library supports it
 * 🔄 Automatic reconnection after a connection loss
 * 🐳 Fully Docker Compose based
 
 ---
 
-## 💬 Commands
+# 💬 Commands
 
 | Command | Description | Example |
 | --- | --- | --- |
@@ -53,7 +43,8 @@ You have to stop the docker service to get the connection back.
 | `/osm [place]` | 🗺️ OpenStreetMap info: name, address, GPS | `/osm Moby's café` |
 | `/georisque` | ⚠️ Lists commune risks with status `Risque Existant` or `Risque Existant - modéré` (cached 7 days in memory, configurable via `GEORISQUES_CACHE_TTL` in seconds) | `/georisque` |
 | `/gps` | 🧭 Your GPS coordinates (`Long` / `Lat`) and the nearest address (reverse geocoding) | `/gps` |
-| `/hamrelay` | 📻 Amateur radio repeaters around Rouen (static text, hard-coded in `bot.py`) | `/hamrelay` |
+| `/hamrelay` | 📻 Amateur radio repeaters (F5ZFF Mont-Saint-Aignan, F5ZMK Deville-les-Rouen; static text, hard-coded in `bot.py`) | `/hamrelay` |
+| `/translate` | 🌍 Translates a text between two languages | `/translate fr en bonjour` |
 | `/search [question]` | 🔎 Web search summarized by the LLM | `/search latest Raspberry Pi model` |
 | `/emergency [situation]` | 🚑 Finds the closest emergency case and returns its numbered steps (first aid) | `/emergency saignement abondant` |
 | `/github` | 🐙 Link to the repository | `/github` |
@@ -61,7 +52,7 @@ You have to stop the docker service to get the connection back.
 
 An unknown command returns `❓ Commande inconnue. Tape /help`.
 
-### Example: `/osm`
+## Example: `/osm`
 
 ```text
 /osm Moby's café
@@ -76,7 +67,7 @@ An unknown command returns `❓ Commande inconnue. Tape /help`.
 
 The `🕒` (opening hours) and `📞` (phone) lines only appear when the data exists in OpenStreetMap.
 
-### Example: `/gps`
+## Example: `/gps`
 
 ```text
 /gps
@@ -90,7 +81,7 @@ Lat : 49.44320
 
 Coordinates are rounded to 5 decimals (about 1 m). The `🏠` line is omitted if the reverse geocoding fails. If the node's position is unknown, the bot replies `Bot cannot get your GPS coordonate`.
 
-### Example: `/search`
+## Example: `/search`
 
 ```text
 /search latest Raspberry Pi 5 model
@@ -100,7 +91,7 @@ Coordinates are rounded to 5 decimals (about 1 m). The `🏠` line is omitted if
 Le Raspberry Pi 5 existe notamment en versions 2, 4, 8 et 16 Go de RAM.
 ```
 
-### Example: `/emergency`
+## Example: `/emergency`
 
 ```text
 /emergency saignement abondant
@@ -118,127 +109,18 @@ The emergency module compares the user request to a local index of cases and ret
 
 ---
 
-## 🚑 First-aid data source
+# 🚀 Installation Guide
 
-The bot can provide first-aid guidance thanks to the Open Data documents published by Odersa on `https://avantlessecours.odersa.org/`.
-
-The script [`emergency/download_aid.py`](/home/ylan/development/meshtastic_search_bot/emergency/download_aid.py) downloads:
-
-* the case index (`cas.json`),
-* each case file in the local `emergency/first-aid/` directory,
-* and the list of steps (`gestes`) used by the `/emergency` command.
-
-This keeps the bot autonomous even without a network call during the rescue workflow. The command computes a TF-IDF similarity between the sent request and the indexed cases, then returns the most relevant emergency procedure.
-
----
-
-## 🏗️ Architecture
-
-The bot uses a global LLM router located in [`tool/llm.py`](/home/ylan/development/meshtastic_search_bot/tool/llm.py). This router centralizes every LLM call and automatically falls back from Vireonix to Ollama if the first provider is unavailable or returns unusable data. Vireonix itself is retried twice with exponential backoff on `429` and `5xx` responses, as recommended in the official docs.
-
-```mermaid
-flowchart LR
-    M["📡 Meshtastic Node"]
-    B["🤖 Bot"]
-    R["🧭 LLM Router<br/>tool/llm.py"]
-    V["🧠 Vireonix"]
-    O["🦙 Ollama"]
-    S["🔎 SearXNG"]
-    P["🗺️ OpenStreetMap<br/>(Nominatim)"]
-
-    M -->|"Message"| B
-    B --> R
-    R -->|"try first"| V
-    V -->|"fallback"| O
-    R --> S
-    R --> P
-    B -->|"Answer"| M
-```
-
-The route is conceptually:
-
-- `call_llm(prompt)` is called by the bot
-- it tries Vireonix first
-- if Vireonix is misconfigured, unreachable, times out or returns an empty/invalid answer, it retries with Ollama
-- the rest of the code only knows about the generic `call_llm(...)` and does not need to care which backend was used
-
-Project structure for the LLM layer:
-
-```text
-tool/
-├── llm.py                     # centralized router / public entry point
-├── llm_providers/
-│   ├── __init__.py            # provider imports and shared logic
-│   ├── vireonix.py            # Vireonix client
-│   └── ollama.py              # Ollama client
-├── ...
-```
-
----
-
-## 🔄 Flows
-
-### `/search`
-
-```mermaid
-flowchart TD
-    A["📡 Message on search channel"] --> B["🤖 Ollama<br/>Build search query"]
-    B -.-> L["🏙️ City<br/>🕐 Date and time"]
-    B --> C["🔎 SearXNG<br/>Web search"]
-    C --> D["📄 Top results"]
-    D --> E["🤖 Ollama<br/>Generate short answer"]
-    E --> F["✂️ Limit to 200 characters"]
-    F --> G["📡 Meshtastic reply"]
-```
-
-### `/osm`
-
-```mermaid
-flowchart TD
-    A["📡 /osm place"] --> P["📍 Sender GPS position known?"]
-    P -->|"Yes"| N1["🗺️ Nominatim around position<br/>radius 1 km → 5 km → 20 km"]
-    N1 -->|"Found"| F["📍 Structured message<br/>name · address · GPS"]
-    N1 -->|"Not found at any radius"| B
-    P -->|"No"| B["🔎 SearXNG<br/>place + city"]
-    B --> C["🤖 Ollama<br/>Extract the real place name"]
-    C -->|"Name found"| D["🗺️ Nominatim<br/>name + city"]
-    C -->|"NONE"| E["Use the name typed by the user"]
-    E --> D
-    D -->|"Found"| F
-    D -->|"Not found"| G["❌ Not found, suggest /search"]
-    F --> H["📡 Meshtastic reply"]
-    G --> H
-```
-
-### `/gps`
-
-```mermaid
-flowchart TD
-    A["📡 /gps"] --> P["📍 Sender GPS position known?"]
-    P -->|"No"| X["Bot cannot get your GPS coordonate"]
-    P -->|"Yes"| N["🗺️ Nominatim reverse<br/>lat + lon"]
-    N -->|"Found"| F["Long · Lat · 🏠 address"]
-    N -->|"Error / nothing"| G["Long · Lat"]
-    F --> H["📡 Meshtastic reply"]
-    G --> H
-    X --> H
-```
-
----
-
-## 📋 Requirements
+## Requirements
 
 * Docker and Docker Compose
 * A Meshtastic node reachable over TCP (usually port `4403`)
 * A running SearXNG instance with JSON output enabled
-* Docker Compose starts Ollama and downloads the configured model
+* Docker Compose starts Ollama and downloads the configured fallback model
 * A dedicated Meshtastic channel for the bot
 * Internet access to Nominatim (`nominatim.openstreetmap.org`) for `/osm` and `/gps`
 * Internet access to Géorisques (`georisques.gouv.fr`) for `/georisque`
-
----
-
-# 🚀 Installation
+* Optional: internet access to Vireonix (`vireonix.ai`) as the preferred LLM backend
 
 ## 1. Clone the repository
 
@@ -265,9 +147,9 @@ CHANNEL_NAME=search
 SEARXNG_URL=http://core:8080/search
 
 # First choice: Vireonix if available, otherwise fallback to Ollama
-VIREONIX_URL=https://api.vireonix.example.com/v1/chat/completions
-VIREONIX_API_KEY=your_api_key
-VIREONIX_MODEL=your-model
+VIREONIX_URL=https://vireonix.ai/v1/chat/completions
+VIREONIX_API_KEY=
+VIREONIX_MODEL=auto
 VIREONIX_TIMEOUT=180
 
 OLLAMA_URL=http://ollama:11434/api/chat
@@ -291,12 +173,12 @@ RECONNECT_DELAY_SECONDS=10
 | `CHANNEL_NAME` | Human-readable channel name (logs only) | `search` |
 | `SEARXNG_URL` | SearXNG search endpoint | `http://core:8080/search` |
 | `VIREONIX_URL` | Vireonix API endpoint used as the preferred LLM backend | `https://vireonix.ai/v1/chat/completions` |
-| `VIREONIX_API_KEY` | API key for Vireonix (optional for the public API) | empty by default |
-| `VIREONIX_MODEL` | Model name for Vireonix, usually `auto` | `auto` |
+| `VIREONIX_API_KEY` | API key for Vireonix (optional for the public API) | empty |
+| `VIREONIX_MODEL` | Model name for Vireonix | `auto` |
 | `VIREONIX_TIMEOUT` | Vireonix request timeout in seconds | `180` |
-| `OLLAMA_URL` | Ollama chat API endpoint | `http://ollama:11434/api/chat` |
+| `OLLAMA_URL` | Ollama chat API endpoint (fallback) | `http://ollama:11434/api/chat` |
 | `OLLAMA_MODEL` | Model used for fallback LLM requests | `qwen3:1.7b` |
-| `OLLAMA_TIMEOUT` | LLM request timeout in seconds | `180` |
+| `OLLAMA_TIMEOUT` | Ollama request timeout in seconds | `180` |
 | `CITY` | Local city added to searches and OSM lookups | `Paris, France` |
 | `TZ_NAME` | Time zone used for date and time in prompts | `Europe/Paris` |
 | `GITHUB_URL` | Link returned by `/github` | repository URL |
@@ -305,11 +187,9 @@ RECONNECT_DELAY_SECONDS=10
 
 > **Important:** `CHANNEL_INDEX` must match the real Meshtastic channel index. The bot replies on the channel the message was received on.
 >
-> **LLM fallback behavior:** the global router in [`tool/llm.py`](/home/ylan/development/meshtastic_search_bot/tool/llm.py) tries Vireonix first and automatically falls back to Ollama when Vireonix is unavailable, unreachable, times out, or returns an empty/invalid result.
+> **LLM fallback:** the router in [`tool/llm.py`](tool/llm.py) tries Vireonix first and automatically falls back to Ollama when Vireonix is unavailable, returns an error after its retries, or returns an empty result. See [ARCHITECTURE.md](ARCHITECTURE.md#3-la-couche-llm).
 
----
-
-# 🔎 SearXNG Configuration
+## 3. Configure SearXNG
 
 The bot expects SearXNG to return **JSON**. In `core-config/settings.yml`:
 
@@ -334,26 +214,7 @@ SEARXNG_URL=http://core:8080/search
 
 `core` is the Compose service name.
 
----
-
-# 🗺️ OpenStreetMap (Nominatim)
-
-`/osm` uses the public Nominatim API with `extratags` and `addressdetails` enabled, and French-language results.
-
-When the requesting node's GPS position is known (read from `interface.nodesByNum`), the bot searches within a bounding box (`viewbox` + `bounded=1`) around that position, trying successive radii of **1 km, 5 km then 20 km** until results are found, and keeps the closest one (Haversine distance). If the position is unknown or nothing is found at any radius, it falls back to a plain `name, city` search.
-
-`/gps` uses the Nominatim `reverse` endpoint (`reverse_geocode` in `tool/OpenStreetMap.py`) with `format=jsonv2`, `addressdetails=1` and French-language results. The address is shortened by the same helper as `/osm`.
-
-Please respect the [Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/):
-
-* Send an identifiable `User-Agent` (for example `meshtastic-search-bot/1.0 (you@example.com)`).
-* Do not exceed one request per second — the bot waits 1 second between radius attempts.
-
-Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL 1.0.
-
----
-
-# 🐳 Running the Bot
+## 4. Start the bot
 
 ```bash
 docker compose up -d          # start
@@ -367,119 +228,7 @@ After any change to the Python code or the prompts, rebuild:
 docker compose up -d --build
 ```
 
----
-
-# 🧠 How It Works
-
-For the detailed internal behavior, error handling and LLM fallback logic, see [ARCHITECTURE.md](/home/ylan/development/meshtastic_search_bot/ARCHITECTURE.md).
-
-This README focuses on the end-user setup and usage.
-
-The bot only handles **text messages** received on the channel set by `CHANNEL_INDEX`. Everything else is ignored.
-
-The answer is sent back on the **same channel** as the question, linked to the original packet ID when supported by the installed `meshtastic` library:
-
-```python
-interface.sendText(answer, channelIndex=received_channel, replyId=original_packet_id)
-```
-
-> A Meshtastic text message is limited to roughly **230 bytes**, and each emoji counts for about 4 bytes. Keep `/osm` output short.
-
----
-
-# 🔄 Automatic Reconnection
-
-If the TCP connection to the node drops, the bot:
-
-1. Detects the loss through the `meshtastic.connection.lost` event
-2. Closes the existing interface
-3. Waits `RECONNECT_DELAY_SECONDS`
-4. Opens a new connection and resumes listening
-
-```text
-[MESHTASTIC] Connexion perdue.
-[MESHTASTIC] Connexion perdue (...), reconnexion dans 10s...
-[MESHTASTIC] Connecté à 192.168.1.161:4403
-```
-
----
-
-# 📁 Project Structure
-
-```text
-meshtastic_search_bot/
-├── docker-compose.yml
-├── Dockerfile
-├── .env.example
-├── requirements.txt
-├── ARCHITECTURE.md         # internal design and LLM fallback logic
-├── main.py                 # Meshtastic connection, reception, reply, reconnection
-├── bot.py                  # Commands and answer pipeline
-├── prompt/                 # LLM prompts (Markdown templates)
-│   ├── extract_place_name.md
-│   ├── generate_search_query_for_searXng.md
-│   └── generate_answer_from_searxng.md
-├── tool/
-│   ├── __init__.py
-│   ├── llm.py              # global LLM router / entry point
-│   ├── llm_providers/
-│   │   ├── __init__.py     # provider imports
-│   │   ├── vireonix.py     # Vireonix client
-│   │   └── ollama.py       # Ollama client
-│   ├── searXng.py          # SearXNG client
-│   ├── OpenStreetMap.py    # Nominatim client
-│   ├── Georisques.py       # Géorisques client (/georisque)
-│   └── utils.py            # Prompt loading, time variables, helpers
-└── core-config/
-    └── settings.yml        # SearXNG configuration
-```
-
-### Prompt templates
-
-Prompts live in `prompt/*.md` and use `[placeholder]` variables replaced at runtime:
-
-| Placeholder | Value |
-| --- | --- |
-| `[city]` | `CITY` |
-| `[day]` | Day of the week (in French) |
-| `[date]` | `dd/mm/yyyy` |
-| `[time]` | `HH:MM` |
-| `[question]` | User question (or text to analyze) |
-| `[context]` | Search results |
-
-An unknown placeholder is left as-is and a warning is printed in the logs.
-
----
-
-# 📝 Logging
-
-Each stage of the pipeline is logged:
-
-```text
-[RX] channel=2 question=/osm Moby's café
-[SEARCH] Question de !abcdef: /osm Moby's café
-[BOT] Appel : answer_question
-[BOT] Appel : osm_lookup
-[BOT] Appel : extract_place_name
-[BOT] Appel : search_place_data
-[TX] Réponse envoyée sur channel=2 (search) en réponse à l'id 123456
-```
-
----
-
-# 🔐 Privacy
-
-The search side can be fully self-hosted:
-
-```text
-Meshtastic → Your bot → Your SearXNG → Search engines
-```
-
-The bot uses no database and no user accounts. Note that `/gps` sends the sender's coordinates and `/osm` sends the place name and city to the public Nominatim service, and `/georisque` sends the configured city to the public Géorisques API.
-
----
-
-# 🛠️ Troubleshooting
+## 5. Troubleshooting
 
 ### `ModuleNotFoundError: No module named 'tool'`
 
@@ -505,7 +254,7 @@ The slim image may lack time zone data. Add `tzdata` to `requirements.txt` and r
 
 ### SearXNG returns no results
 
-Check that JSON output is enabled (see [SearXNG Configuration](#-searxng-configuration)) and test the endpoint from inside the Docker network.
+Check that JSON output is enabled (see [SearXNG](#3-configure-searxng)) and test the endpoint from inside the Docker network.
 
 ### The bot receives messages but ignores them
 
@@ -525,6 +274,70 @@ Try a more precise name, or use `/search`. Nominatim only knows what is mapped i
 nc -zv <MESHTASTIC_HOST> 4403
 ```
 
+### Vireonix returns `502` or `429`
+
+This is expected occasionally. The bot retries Vireonix once more on `429` and `5xx`, then switches to Ollama. Check the `[LLM]` lines in the logs to see which provider answered.
+
+---
+
+# ⚠️ Limits and Warnings
+
+## TCP connection
+
+As things stand, because of the TCP connection, the node will not be accessible from a client application.
+
+You have to stop the docker service to get the connection back.
+
+## Message size
+
+A Meshtastic text message is limited to roughly **230 bytes**, and each emoji counts for about 4 bytes. Answers are capped at 200 characters, so keep `/osm` output short.
+
+## Nominatim usage policy
+
+Please respect the [Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/):
+
+* Send an identifiable `User-Agent` (for example `meshtastic-search-bot/1.0 (you@example.com)`).
+* Do not exceed one request per second. The bot waits 1 second between radius attempts.
+
+Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL 1.0.
+
+## LLM fallback
+
+* Vireonix is a third-party public service: its availability and rate limits are outside this project's control.
+* When Vireonix is used, prompts (including the user's question and the search results) are sent to `vireonix.ai`.
+* The Ollama fallback runs locally, but its answer quality depends on the small configured model (`qwen3:1.7b` by default).
+* The retry delays are short. A long Vireonix outage causes a slower reply before Ollama answers.
+
+## Privacy
+
+The search side can be fully self-hosted:
+
+```text
+Meshtastic → Your bot → Your SearXNG → Search engines
+```
+
+The bot uses no database and no user accounts. Note that `/gps` sends the sender's coordinates and `/osm` sends the place name and city to the public Nominatim service, and `/georisque` sends the configured city to the public Géorisques API.
+
+## First-aid data
+
+The `/emergency` command is a convenience tool, not a substitute for emergency services. Always call the local emergency number in a real emergency.
+
+---
+
+# 📝 Logging
+
+Each stage of the pipeline is logged:
+
+```text
+[RX] channel=2 question=/osm Moby's café
+[SEARCH] Question de !abcdef: /osm Moby's café
+[BOT] Appel : answer_question
+[BOT] Appel : osm_lookup
+[BOT] Appel : extract_place_name
+[BOT] Appel : search_place_data
+[TX] Réponse envoyée sur channel=2 (search) en réponse à l'id 123456
+```
+
 ---
 
 # 📜 License
@@ -539,4 +352,4 @@ work is also released under the GPLv3 and keeps its source code available.
 
 ## 🤝 Contributing
 
-Issues, improvements and pull requests are welcome.
+Contributions are welcome. Please open an issue or a pull request on [GitHub](https://github.com/YR72dpi/meshtastic_search_bot).
