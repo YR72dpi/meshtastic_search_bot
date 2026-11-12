@@ -371,35 +371,13 @@ docker compose up -d --build
 
 # 🧠 How It Works
 
+For the detailed internal behavior, error handling and LLM fallback logic, see [ARCHITECTURE.md](/home/ylan/development/meshtastic_search_bot/ARCHITECTURE.md).
+
+This README focuses on the end-user setup and usage.
+
 The bot only handles **text messages** received on the channel set by `CHANNEL_INDEX`. Everything else is ignored.
 
-### Web search (`/search` or plain text)
-
-1. **LLM router:** every prompt calls the central router in [`tool/llm.py`](/home/ylan/development/meshtastic_search_bot/tool/llm.py), not a provider directly.
-2. **Query generation:** the router tries Vireonix first; if it is unreachable or invalid, it automatically retries with Ollama. The selected provider receives the question, the city and the current date/time, and produces a concise search query.
-3. **Search:** the query is sent to SearXNG and the top results are used as context.
-4. **Answer:** the same router is used again to synthesize a short answer. The bot truncates the result to 200 characters.
-
-If both providers are unavailable, the bot falls back to the raw question for the search or returns an excerpt of the search results instead of a generated answer.
-
-### Place lookup (`/osm`)
-
-1. **Position:** the bot tries to read the sender node's GPS position from the Meshtastic interface.
-2. **Nearby search:** if a position is known, Nominatim is queried around it with growing radii (1 km, 5 km, 20 km); the closest result is kept.
-3. **Fallback search:** without a position, or if nothing was found nearby, SearXNG is queried with `place + city`.
-4. **Name extraction:** the LLM router is used to extract the real place name from the SearXNG results (`NONE` if it finds nothing, in which case the user's text is used). It tries Vireonix first and falls back to Ollama if needed.
-5. **OpenStreetMap:** Nominatim is queried with `name, city`.
-6. **Formatting:** the bot builds the structured message itself, without the LLM, so name, address and GPS coordinates are never altered.
-
-### Position lookup (`/gps`)
-
-1. **Position:** the sender node's GPS position is read from the Meshtastic interface.
-2. **Reverse geocoding:** Nominatim's `reverse` endpoint returns the nearest place for the coordinates.
-3. **Formatting:** the bot replies with `Long`, `Lat` and, if available, a short address. No LLM is involved.
-
-### Replying
-
-The answer is sent on the **same channel** as the question, linked to the original packet ID when supported by the installed `meshtastic` library:
+The answer is sent back on the **same channel** as the question, linked to the original packet ID when supported by the installed `meshtastic` library:
 
 ```python
 interface.sendText(answer, channelIndex=received_channel, replyId=original_packet_id)
@@ -434,21 +412,26 @@ meshtastic_search_bot/
 ├── Dockerfile
 ├── .env.example
 ├── requirements.txt
-├── main.py                  # Meshtastic connection, reception, reply, reconnection
-├── bot.py                   # Commands and answer pipeline
-├── prompt/                  # LLM prompts (Markdown templates)
+├── ARCHITECTURE.md         # internal design and LLM fallback logic
+├── main.py                 # Meshtastic connection, reception, reply, reconnection
+├── bot.py                  # Commands and answer pipeline
+├── prompt/                 # LLM prompts (Markdown templates)
 │   ├── extract_place_name.md
 │   ├── generate_search_query_for_searXng.md
 │   └── generate_answer_from_searxng.md
 ├── tool/
 │   ├── __init__.py
-│   ├── ollama.py            # Ollama LLM client
-│   ├── searXng.py           # SearXNG client
-│   ├── OpenStreetMap.py     # Nominatim client
-│   ├── Georisques.py        # Géorisques client (/georisque)
-│   └── utils.py             # Prompt loading, time variables, helpers
+│   ├── llm.py              # global LLM router / entry point
+│   ├── llm_providers/
+│   │   ├── __init__.py     # provider imports
+│   │   ├── vireonix.py     # Vireonix client
+│   │   └── ollama.py       # Ollama client
+│   ├── searXng.py          # SearXNG client
+│   ├── OpenStreetMap.py    # Nominatim client
+│   ├── Georisques.py       # Géorisques client (/georisque)
+│   └── utils.py            # Prompt loading, time variables, helpers
 └── core-config/
-    └── settings.yml         # SearXNG configuration
+    └── settings.yml        # SearXNG configuration
 ```
 
 ### Prompt templates
