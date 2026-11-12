@@ -192,14 +192,18 @@ try:
                 interface.close()
             except Exception:
                 pass
-            time.sleep(RECONNECT_DELAY_SECONDS)
-            try:
-                interface = connect()
-            except Exception as reconnect_error:
-                print(
-                    f"[MESHTASTIC] Échec de reconnexion: {reconnect_error}",
-                    flush=True
-                )
+            # Retente tant que la connexion échoue : connect() efface le flag
+            # connection_lost, donc une simple nouvelle itération ne réessaierait pas.
+            while True:
+                time.sleep(RECONNECT_DELAY_SECONDS)
+                try:
+                    interface = connect()
+                    break
+                except Exception as reconnect_error:
+                    print(
+                        f"[MESHTASTIC] Échec de reconnexion: {reconnect_error}",
+                        flush=True
+                    )
 
 except KeyboardInterrupt:
     print("Arrêt du bot.", flush=True)
