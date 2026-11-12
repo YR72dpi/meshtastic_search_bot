@@ -134,19 +134,44 @@ This keeps the bot autonomous even without a network call during the rescue work
 
 ## 🏗️ Architecture
 
+The bot uses a global LLM router located in [`tool/llm.py`](/home/ylan/development/meshtastic_search_bot/tool/llm.py). This router centralizes every LLM call and automatically falls back from Vireonix to Ollama if the first provider is unavailable or returns unusable data.
+
 ```mermaid
 flowchart LR
     M["📡 Meshtastic Node"]
     B["🤖 Bot"]
-    V["🧠 Ollama"]
+    R["🧭 LLM Router<br/>tool/llm.py"]
+    V["🧠 Vireonix"]
+    O["🦙 Ollama"]
     S["🔎 SearXNG"]
-    O["🗺️ OpenStreetMap<br/>(Nominatim)"]
+    P["🗺️ OpenStreetMap<br/>(Nominatim)"]
 
     M -->|"Message"| B
-    B <--> V
-    B <--> S
-    B <--> O
+    B --> R
+    R -->|"try first"| V
+    V -->|"fallback"| O
+    R --> S
+    R --> P
     B -->|"Answer"| M
+```
+
+The route is conceptually:
+
+- `call_llm(prompt)` is called by the bot
+- it tries Vireonix first
+- if Vireonix is misconfigured, unreachable, times out or returns an empty/invalid answer, it retries with Ollama
+- the rest of the code only knows about the generic `call_llm(...)` and does not need to care which backend was used
+
+Project structure for the LLM layer:
+
+```text
+tool/
+├── llm.py                     # centralized router / public entry point
+├── llm_providers/
+│   ├── __init__.py            # provider imports and shared logic
+│   ├── vireonix.py            # Vireonix client
+│   └── ollama.py              # Ollama client
+├── ...
 ```
 
 ---
@@ -238,8 +263,16 @@ CHANNEL_INDEX=2
 CHANNEL_NAME=search
 
 SEARXNG_URL=http://core:8080/search
+
+# First choice: Vireonix if available, otherwise fallback to Ollama
+VIREONIX_URL=https://api.vireonix.example.com/v1/chat/completions
+VIREONIX_API_KEY=your_api_key
+VIREONIX_MODEL=your-model
+VIREONIX_TIMEOUT=180
+
 OLLAMA_URL=http://ollama:11434/api/chat
 OLLAMA_MODEL=qwen3:1.7b
+OLLAMA_TIMEOUT=180
 
 CITY=Rouen, France
 TZ_NAME=Europe/Paris
@@ -257,8 +290,12 @@ RECONNECT_DELAY_SECONDS=10
 | `CHANNEL_INDEX` | Channel index monitored by the bot (**required**) | `2` |
 | `CHANNEL_NAME` | Human-readable channel name (logs only) | `search` |
 | `SEARXNG_URL` | SearXNG search endpoint | `http://core:8080/search` |
+| `VIREONIX_URL` | Vireonix API endpoint used as the preferred LLM backend | `https://vireonix.ai/v1/chat/completions` |
+| `VIREONIX_API_KEY` | API key for Vireonix (optional for the public API) | empty by default |
+| `VIREONIX_MODEL` | Model name for Vireonix, usually `auto` | `auto` |
+| `VIREONIX_TIMEOUT` | Vireonix request timeout in seconds | `180` |
 | `OLLAMA_URL` | Ollama chat API endpoint | `http://ollama:11434/api/chat` |
-| `OLLAMA_MODEL` | Model used for LLM requests | `qwen3:1.7b` |
+| `OLLAMA_MODEL` | Model used for fallback LLM requests | `qwen3:1.7b` |
 | `OLLAMA_TIMEOUT` | LLM request timeout in seconds | `180` |
 | `CITY` | Local city added to searches and OSM lookups | `Paris, France` |
 | `TZ_NAME` | Time zone used for date and time in prompts | `Europe/Paris` |
@@ -267,6 +304,8 @@ RECONNECT_DELAY_SECONDS=10
 | `SEND_DELAY_SECONDS` | Pause between the parts of a split answer | `5` |
 
 > **Important:** `CHANNEL_INDEX` must match the real Meshtastic channel index. The bot replies on the channel the message was received on.
+>
+> **LLM fallback behavior:** the global router in [`tool/llm.py`](/home/ylan/development/meshtastic_search_bot/tool/llm.py) tries Vireonix first and automatically falls back to Ollama when Vireonix is unavailable, unreachable, times out, or returns an empty/invalid result.
 
 ---
 
@@ -336,18 +375,19 @@ The bot only handles **text messages** received on the channel set by `CHANNEL_I
 
 ### Web search (`/search` or plain text)
 
-1. **Query generation:** Ollama receives the question, the city and the current date/time, and produces a concise search query.
-2. **Search:** the query is sent to SearXNG and the top results are used as context.
-3. **Answer:** Ollama answers in French, directly and concisely, without inventing information. The bot truncates the result to 200 characters.
+1. **LLM router:** every prompt calls the central router in [`tool/llm.py`](/home/ylan/development/meshtastic_search_bot/tool/llm.py), not a provider directly.
+2. **Query generation:** the router tries Vireonix first; if it is unreachable or invalid, it automatically retries with Ollama. The selected provider receives the question, the city and the current date/time, and produces a concise search query.
+3. **Search:** the query is sent to SearXNG and the top results are used as context.
+4. **Answer:** the same router is used again to synthesize a short answer. The bot truncates the result to 200 characters.
 
-If Ollama is unreachable, the bot falls back to the raw question for the search, or returns an excerpt of the results.
+If both providers are unavailable, the bot falls back to the raw question for the search or returns an excerpt of the search results instead of a generated answer.
 
 ### Place lookup (`/osm`)
 
 1. **Position:** the bot tries to read the sender node's GPS position from the Meshtastic interface.
 2. **Nearby search:** if a position is known, Nominatim is queried around it with growing radii (1 km, 5 km, 20 km); the closest result is kept.
 3. **Fallback search:** without a position, or if nothing was found nearby, SearXNG is queried with `place + city`.
-4. **Name extraction:** Ollama extracts the real place name from the SearXNG results (`NONE` if it finds nothing, in which case the user's text is used).
+4. **Name extraction:** the LLM router is used to extract the real place name from the SearXNG results (`NONE` if it finds nothing, in which case the user's text is used). It tries Vireonix first and falls back to Ollama if needed.
 5. **OpenStreetMap:** Nominatim is queried with `name, city`.
 6. **Formatting:** the bot builds the structured message itself, without the LLM, so name, address and GPS coordinates are never altered.
 
