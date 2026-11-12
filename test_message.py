@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import math
 
 from bot import answer_question
 
@@ -7,11 +8,23 @@ from bot import answer_question
 def parse_position(value: str):
     try:
         lat, lon = value.split(",")
-        return float(lat.strip()), float(lon.strip())
+        lat, lon = float(lat.strip()), float(lon.strip())
     except ValueError as exc:
         raise argparse.ArgumentTypeError(
             "--position doit être au format 'latitude,longitude' (ex: 49.4432,1.0993)"
         ) from exc
+
+    if (
+        not math.isfinite(lat)
+        or not math.isfinite(lon)
+        or not (-90 <= lat <= 90)
+        or not (-180 <= lon <= 180)
+    ):
+        raise argparse.ArgumentTypeError(
+            "--position doit contenir une latitude entre -90 et 90 "
+            "et une longitude entre -180 et 180"
+        )
+    return lat, lon
 
 
 def main() -> int:
@@ -28,7 +41,10 @@ def main() -> int:
     parser.add_argument(
         "--position",
         type=parse_position,
-        help="Optionnel: position de l'expéditeur au format 'latitude,longitude'",
+        help=(
+            "Optionnel: position au format 'latitude,longitude' "
+            "(latitude -90..90, longitude -180..180)"
+        ),
     )
     args = parser.parse_args()
 
