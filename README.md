@@ -134,7 +134,7 @@ This keeps the bot autonomous even without a network call during the rescue work
 
 ## 🏗️ Architecture
 
-The bot uses a global LLM router located in [`tool/llm.py`](/home/ylan/development/meshtastic_search_bot/tool/llm.py). This router centralizes every LLM call and automatically falls back from Vireonix to Ollama if the first provider is unavailable or returns unusable data.
+The bot uses a global LLM router located in [`tool/llm.py`](/home/ylan/development/meshtastic_search_bot/tool/llm.py). This router centralizes every LLM call and automatically falls back from Vireonix to Ollama if the first provider is unavailable or returns unusable data. Vireonix itself is retried twice with exponential backoff on `429` and `5xx` responses, as recommended in the official docs.
 
 ```mermaid
 flowchart LR
