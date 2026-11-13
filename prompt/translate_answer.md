@@ -28,6 +28,6 @@ Traduire le texte fourni de sa langue source vers la langue cible demandée.
 - Si le texte est déjà dans la langue cible, retourne-le sans modification.
 
 # Entrée
-Langue de d'origine : [fromLanguage]
+Langue d'origine : [fromLanguage]
 Langue cible : [toLanguage]
 Texte : "[sentence]"
