@@ -16,8 +16,8 @@
 
 import time
 import threading
-from pubsub import pub
-from meshtastic.tcp_interface import TCPInterface
+from pubsub import pub # type: ignore[import-not-found]  # nécessite: pip install meshtastic
+from meshtastic.tcp_interface import TCPInterface  # type: ignore[import-not-found]  # nécessite: pip install meshtastic
 import os
 from bot import answer_question
 
