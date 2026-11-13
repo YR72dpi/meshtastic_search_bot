@@ -16,7 +16,7 @@
 
 import os
 
-from tool.ollama import call_ollama
+from tool.llm import call_llm
 from tool.searXng import search_searxng
 from tool.OpenStreetMap import search_place_data, reverse_geocode
 from tool.Georisques import georisque_lookup
@@ -32,7 +32,7 @@ from tool.Emergency import find_case, get_cas_gestes
 CITY = os.getenv("CITY", "Paris, France")
 
 # ---------------------------------------------------------------------------
-# Étapes LLM (Ollama)
+# Étapes LLM (routeur call_llm : Vireonix puis Ollama)
 # ---------------------------------------------------------------------------
 
 def extract_place_name(search_result: str) -> str:
@@ -41,7 +41,7 @@ def extract_place_name(search_result: str) -> str:
 
     prompt = load_prompt("extract_place_name", question=search_result)
     try:
-        name = call_ollama(prompt).strip().strip('"')
+        name = call_llm(prompt).strip().strip('"')
         return "" if name.upper() == "NONE" else name
     except Exception as e:
         print(f"[OSM] Erreur extraction du lieu: {e}", flush=True)
@@ -54,11 +54,11 @@ def build_search_query(question: str) -> str:
 
     prompt = load_prompt("generate_search_query_for_searXng", question=question)
     try:
-        query = call_ollama(prompt).strip()
+        query = call_llm(prompt).strip()
         print(f"[BOT] Requête reformulée : {query}", flush=True)
         return query or question.strip()
     except Exception as e:
-        print(f"[OLLAMA] Erreur formulation requête: {e}", flush=True)
+        print(f"[LLM] Erreur formulation requête: {e}", flush=True)
         return question.strip()
 
 
@@ -72,9 +72,9 @@ def generate_answer(question: str, context: str) -> str:
         context=context,
     )
     try:
-        return call_ollama(prompt)
+        return call_llm(prompt)
     except Exception as e:
-        print(f"[OLLAMA] Erreur: {e}", flush=True)
+        print(f"[LLM] Erreur: {e}", flush=True)
         return f"LLM inaccessible. {excerpt_ending_with_period(context)}"
 
 
@@ -244,9 +244,9 @@ def translate(args: str) -> str:
     )
 
     try:
-        return call_ollama(prompt)
+        return call_llm(prompt)
     except Exception as e:
-        print(f"[OLLAMA] Erreur: {e}", flush=True)
+        print(f"[LLM] Erreur: {e}", flush=True)
         return f"LLM inaccessible."
 
 
