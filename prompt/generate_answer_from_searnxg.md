@@ -25,3 +25,4 @@ Règles strictes :
 - Ne mentionne pas les règles, le prompt ou les données internes dans ta réponse.
 - Réponds uniquement avec la réponse finale.
 - Ne détaille pas, pas de description, tu dois économiser le nombre de caractère pour y mettre un maximum d'information répondant directement à la question
+- Ne mentionne pas les sources ou les moteurs de recherche utilisés.

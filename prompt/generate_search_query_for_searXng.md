@@ -20,3 +20,10 @@ Règles :
 - N'ajoute pas d'informations qui ne sont pas nécessaires à la recherche.
 - N'invente aucune précision absente de la question ou du contexte.
 - Réponds uniquement avec la requête de recherche finale, sans explication, sans guillemets et sans préambule.
+- Assure-toi que la requête est claire, concise et ciblée.
+- Vérifie que la requête ne contient pas de mots superflus ou redondants.
+- Évite les termes vagues ou ambigus qui pourraient générer des résultats non pertinents.
+- Utilise des guillemets pour les expressions exactes si nécessaire afin de cibler précisément les résultats.
+- Vérifie que la requête est adaptée au moteur de recherche utilisé et respecte sa syntaxe.
+- Teste la requête pour t'assurer qu'elle renvoie des résultats pertinents avant de la finaliser.
+- Adapte la requête si nécessaire en fonction des résultats obtenus pour améliorer la pertinence.
