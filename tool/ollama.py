@@ -16,6 +16,7 @@ def call_ollama(prompt: str) -> str:
         # Évite la longue phase de réflexion de Qwen 3 et garde le modèle chargé
         "think": False,
         "keep_alive": "30m",
+        "temperature": 0.3,
     }
     response = requests.post(OLLAMA_URL, json=payload, timeout=OLLAMA_TIMEOUT)
     response.raise_for_status()
