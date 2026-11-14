@@ -190,6 +190,29 @@ RECONNECT_DELAY_SECONDS=10
 >
 > **LLM fallback:** the router in [`tool/llm.py`](tool/llm.py) tries Vireonix first and automatically falls back to Ollama when Vireonix is unavailable, returns an error after its retries, or returns an empty result. See [ARCHITECTURE.md](ARCHITECTURE.md#3-la-couche-llm).
 
+### Remote Ollama with HTTP Basic authentication
+
+If a remote Ollama server is protected by a proxy using HTTP Basic authentication,
+percent-encode special characters in the username and password before putting them
+in `OLLAMA_URL`. For example, `?` becomes `%3F` and `@` becomes `%40`; otherwise
+the URL may be parsed incorrectly and cause an `InvalidURL` error.
+
+On Debian, encode a value without echoing it while typing:
+
+```bash
+python3 -c 'from urllib.parse import quote; from getpass import getpass; print(quote(getpass("Value: "), safe=""))'
+```
+
+In `.env`, use the encoded values and keep the `/api/chat` endpoint:
+
+```dotenv
+OLLAMA_URL='https://ENCODED_USER:ENCODED_PASSWORD@ollama.example.com/api/chat'
+```
+
+The encoded output and URL still contain credentials. Use HTTPS, protect `.env`,
+and avoid sharing the URL or exposing it in logs. After changing `.env`, recreate
+the bot container with `docker compose up -d meshtastic-llm-bot`.
+
 ## 3. Configure SearXNG
 
 The bot expects SearXNG to return **JSON**. In `core-config/settings.yml`:
