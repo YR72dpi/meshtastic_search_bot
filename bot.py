@@ -16,7 +16,10 @@
 
 import os
 
-from tool.llm import call_llm
+import requests
+
+from tool.llm import call_llm, call_ollama
+from tool.llm_providers import ollama
 from tool.searXng import search_searxng
 from tool.OpenStreetMap import search_place_data, reverse_geocode
 from tool.Georisques import georisque_lookup
@@ -250,6 +253,20 @@ def translate(args: str) -> str:
         return f"LLM inaccessible."
 
 
+def llm_only(question: str) -> str:
+    if not question.strip():
+        return "❌ Usage : /llm [question]"
+
+    try:
+        answer = call_ollama(question)
+        if not answer:
+            return "Ollama a renvoyé une réponse vide."
+        return f"[{ollama.OLLAMA_MODEL}]\n{answer}"
+    except (requests.RequestException, ValueError, KeyError, TypeError, AttributeError) as e:
+        print(f"[OLLAMA] Erreur: {type(e).__name__}", flush=True)
+        return "Ollama est inaccessible ou a renvoyé une réponse invalide."
+
+
 def answer_question(question: str, position=None) -> list[str]:
     print("[BOT] Appel : answer_question", flush=True)
     command, args = parse_command(question)
@@ -272,6 +289,8 @@ def answer_question(question: str, position=None) -> list[str]:
         answer = basic_search(args) if args else "❌ Usage : /search [question]"
     elif command == "/translate":
         answer = translate(args)
+    elif command == "/llm":
+        answer = llm_only(args)
     else:
         answer = "❓ Commande inconnue. Tape /help"
 

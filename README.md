@@ -46,6 +46,7 @@ For the internal design, algorithms and technologies, see [ARCHITECTURE.md](ARCH
 | `/hamrelay` | 📻 Amateur radio repeaters (F5ZFF Mont-Saint-Aignan, F5ZMK Deville-les-Rouen; static text, hard-coded in `bot.py`) | `/hamrelay` |
 | `/translate` | 🌍 Translates a text between two languages | `/translate fr en bonjour` |
 | `/search [question]` | 🔎 Web search summarized by the LLM | `/search latest Raspberry Pi model` |
+| `/llm [question]` | Asks the configured Ollama directly and prefixes the answer with the model name, without web search or Vireonix fallback | `/llm What is Meshtastic?` |
 | `/emergency [situation]` | 🚑 Finds the closest emergency case and returns its numbered steps (first aid) | `/emergency saignement abondant` |
 | `/github` | 🐙 Link to the repository | `/github` |
 | *any other text* | 🔎 Handled like `/search` | `weather in Rouen today?` |

@@ -38,6 +38,11 @@ COMMAND_HELP = {
         "usage": "/search [question]",
         "description": "Fait une recherche web puis résume la réponse avec le modèle LLM.",
     },
+    "llm": {
+        "title": "/llm",
+        "usage": "/llm [question]",
+        "description": "Pose une question directement à l'Ollama configuré, sans recherche web ni bascule.",
+    },
     "emergency": {
         "title": "/emergency",
         "usage": "/emergency [situation]",
