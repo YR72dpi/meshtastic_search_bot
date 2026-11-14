@@ -41,7 +41,7 @@ COMMAND_HELP = {
     "llm": {
         "title": "/llm",
         "usage": "/llm [question]",
-        "description": "Pose une question directement à l'Ollama configuré, sans recherche web ni bascule.",
+        "description": "Interroge Ollama sans recherche web ni bascule. Réponse précédée du nom du modèle.",
     },
     "emergency": {
         "title": "/emergency",
@@ -85,6 +85,7 @@ def normalize_command(raw: str) -> str:
         "emergency": "emergency",
         "help": "help",
         "translate": "translate",
+        "llm": "llm"
     }
     return aliases.get(text, text)
 

@@ -17,7 +17,7 @@ For the internal design, algorithms and technologies, see [ARCHITECTURE.md](ARCH
 # ✨ Features
 
 * 📡 Listens to a dedicated Meshtastic channel
-* 💬 Simple commands: `/help`, `/osm`, `/georisque`, `/gps`, `/hamrelay`, `/search`, `/emergency`, `/github`
+* 💬 Simple commands: `/help`, `/osm`, `/georisque`, `/gps`, `/hamrelay`, `/search`, `/llm`, `/emergency`, `/github`
 * 🔎 Web search through a self-hostable SearXNG instance
 * 🤖 LLM for query generation, place-name extraction and answer synthesis, with automatic fallback (Vireonix first, local Ollama otherwise)
 * 🗺️ Structured place info from OpenStreetMap (name, address, GPS, phone, opening hours)
@@ -91,6 +91,25 @@ Coordinates are rounded to 5 decimals (about 1 m). The `🏠` line is omitted if
 ```text
 Le Raspberry Pi 5 existe notamment en versions 2, 4, 8 et 16 Go de RAM.
 ```
+
+## Example: `/llm`
+
+```text
+/llm Qu'est-ce que Meshtastic ?
+```
+
+```text
+[qwen3:1.7b]
+Meshtastic est un réseau de communication utilisant des radios LoRa.
+```
+
+The bot inserts the question into [`prompt/llm_only.md`](prompt/llm_only.md)
+and sends it directly to the configured Ollama model. It does not search the web
+or fall back to Vireonix. The model uses its own knowledge, so answers may be
+outdated or incorrect; the prompt's confidence instruction is not a guarantee.
+Successful answers begin with `[model]` and may be split into several messages.
+An empty question returns usage instructions; an unavailable Ollama service or
+an empty response produces an error message.
 
 ## Example: `/emergency`
 
@@ -177,8 +196,8 @@ RECONNECT_DELAY_SECONDS=10
 | `VIREONIX_API_KEY` | API key for Vireonix (optional for the public API) | empty |
 | `VIREONIX_MODEL` | Model name for Vireonix | `auto` |
 | `VIREONIX_TIMEOUT` | Vireonix request timeout in seconds | `180` |
-| `OLLAMA_URL` | Ollama chat API endpoint (fallback) | `http://ollama:11434/api/chat` |
-| `OLLAMA_MODEL` | Model used for fallback LLM requests | `qwen3:1.7b` |
+| `OLLAMA_URL` | Ollama chat API endpoint used for `/llm` and fallback | `http://ollama:11434/api/chat` |
+| `OLLAMA_MODEL` | Model used for `/llm` and fallback LLM requests | `qwen3:1.7b` |
 | `OLLAMA_TIMEOUT` | Ollama request timeout in seconds | `180` |
 | `CITY` | Local city added to searches and OSM lookups | `Paris, France` |
 | `TZ_NAME` | Time zone used for date and time in prompts | `Europe/Paris` |
@@ -188,7 +207,7 @@ RECONNECT_DELAY_SECONDS=10
 
 > **Important:** `CHANNEL_INDEX` must match the real Meshtastic channel index. The bot replies on the channel the message was received on.
 >
-> **LLM fallback:** the router in [`tool/llm.py`](tool/llm.py) tries Vireonix first and automatically falls back to Ollama when Vireonix is unavailable, returns an error after its retries, or returns an empty result. See [ARCHITECTURE.md](ARCHITECTURE.md#3-la-couche-llm).
+> **LLM fallback:** for commands using the router in [`tool/llm.py`](tool/llm.py), the bot tries Vireonix first and falls back to Ollama when Vireonix fails or returns an empty result. `/llm` bypasses this router and uses only Ollama. See [ARCHITECTURE.md](ARCHITECTURE.md#3-la-couche-llm).
 
 ### Remote Ollama with HTTP Basic authentication
 
