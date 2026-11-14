@@ -258,7 +258,8 @@ def llm_only(question: str) -> str:
         return "❌ Usage : /llm [question]"
 
     try:
-        answer = call_ollama(question)
+        prompt = load_prompt("llm_only", question=question)
+        answer = call_ollama(prompt)
         if not answer:
             return "Ollama a renvoyé une réponse vide."
         return f"[{ollama.OLLAMA_MODEL}]\n{answer}"
