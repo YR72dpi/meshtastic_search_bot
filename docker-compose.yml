@@ -20,9 +20,7 @@ services:
     depends_on:
       core:
         condition: service_started
-      ollama-init:
-        condition: service_completed_successfully
-
+        
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
