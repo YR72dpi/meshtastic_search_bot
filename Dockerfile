@@ -13,6 +13,7 @@ COPY prompt/ ./prompt
 COPY tool/ ./tool
 COPY emergency/ ./emergency
 
-RUN python ./emergency/download_aid.py
+RUN python ./emergency/download_aid.py \
+    && python -c "from tool.Emergency import _build_index; _build_index()"
 
 CMD ["python", "-u", "main.py"]

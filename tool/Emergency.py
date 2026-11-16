@@ -1,3 +1,4 @@
+import hashlib
 import json
 import math
 import re
@@ -8,6 +9,7 @@ from pathlib import Path
 
 FIRST_AID_DIR = Path(__file__).resolve().parent.parent / "emergency" / "first-aid"
 INDEX_PATH = FIRST_AID_DIR / "cas.json"
+INDEX_CACHE_PATH = FIRST_AID_DIR / "tfidf-index.json"
 
 MIN_WORD_LENGTH = 4
 # Racinisation par préfixe : "etouffe" et "etouffement" -> "etouff"
@@ -30,6 +32,15 @@ def _load_json(path: Path) -> dict:
 def _case_numbers() -> list[int]:
     index = _load_json(INDEX_PATH)
     return [cas["numero"] for niveau in index["niveaux"] for cas in niveau["cas"]]
+
+
+def _source_fingerprint() -> str:
+    digest = hashlib.sha256()
+    paths = [INDEX_PATH, *(FIRST_AID_DIR / f"{numero}.json" for numero in _case_numbers())]
+    for path in paths:
+        digest.update(path.name.encode("utf-8"))
+        digest.update(path.read_bytes())
+    return digest.hexdigest()
 
 
 def _case_text(case: dict) -> str:
@@ -65,6 +76,17 @@ def _norm(vector: dict[str, float]) -> float:
 @lru_cache(maxsize=1)
 def _build_index() -> tuple[dict[int, dict[str, float]], dict[str, float]]:
     """Retourne (vecteurs TF-IDF par cas, IDF par mot)."""
+    fingerprint = _source_fingerprint()
+    if INDEX_CACHE_PATH.exists():
+        cached = _load_json(INDEX_CACHE_PATH)
+        if cached["source_fingerprint"] == fingerprint:
+            print("[EMERGENCY] Chargement de l'index TF-IDF préconstruit", flush=True)
+            vectors = {
+                int(numero): vector
+                for numero, vector in cached["vectors"].items()
+            }
+            return vectors, cached["idf"]
+
     print("[EMERGENCY] Construction de l'index TF-IDF", flush=True)
 
     documents = {
@@ -83,6 +105,16 @@ def _build_index() -> tuple[dict[int, dict[str, float]], dict[str, float]]:
         numero: {w: tf * idf[w] for w, tf in _term_frequency(words).items()}
         for numero, words in documents.items()
     }
+
+    cache = {
+        "source_fingerprint": fingerprint,
+        "vectors": vectors,
+        "idf": idf,
+    }
+    temporary_path = INDEX_CACHE_PATH.with_suffix(".tmp")
+    temporary_path.write_text(json.dumps(cache), encoding="utf-8")
+    temporary_path.replace(INDEX_CACHE_PATH)
+
     return vectors, idf
 
 

@@ -125,7 +125,7 @@ an empty response produces an error message.
 5. Ne jamais relâcher la compression
 ```
 
-The emergency module compares the user request to a local index of cases and returns the closest match. The dataset is downloaded once at startup by `emergency/download_aid.py` from `https://avantlessecours.odersa.org/` and stored under `emergency/first-aid/`.
+The emergency module compares the user request to a local index of cases and returns the closest match. During the Docker image build, `emergency/download_aid.py` downloads the dataset from `https://avantlessecours.odersa.org/` into `emergency/first-aid/`, then the TF-IDF index is prebuilt and stored alongside the data. At startup, the bot reuses this index; it rebuilds it if the dataset has changed.
 
 ---
 
