@@ -16,7 +16,7 @@
 
 import os
 
-import requests
+import requests # type: ignore
 
 from tool.llm import call_llm, call_ollama
 from tool.llm_providers import ollama
