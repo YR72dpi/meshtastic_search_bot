@@ -81,10 +81,10 @@ def _build_index() -> tuple[dict[int, dict[str, float]], dict[str, float]]:
         cached = _load_json(INDEX_CACHE_PATH)
         if cached["source_fingerprint"] == fingerprint:
             print("[EMERGENCY] Chargement de l'index TF-IDF préconstruit", flush=True)
-            vectors = {
-                int(numero): vector
-                for numero, vector in cached["vectors"].items()
-            }
+            vectors = {}
+            for numero, vector in cached["vectors"].items():
+                vectors[int(numero)] = vector
+                print(f"[EMERGENCY] Cas {numero} chargé depuis l'index TF-IDF", flush=True)
             return vectors, cached["idf"]
 
     print("[EMERGENCY] Construction de l'index TF-IDF", flush=True)
@@ -101,10 +101,12 @@ def _build_index() -> tuple[dict[int, dict[str, float]], dict[str, float]]:
         for word, freq in doc_freq.items()
     }
 
-    vectors = {
-        numero: {w: tf * idf[w] for w, tf in _term_frequency(words).items()}
-        for numero, words in documents.items()
-    }
+    vectors = {}
+    for numero, words in documents.items():
+        vectors[numero] = {
+            w: tf * idf[w] for w, tf in _term_frequency(words).items()
+        }
+        print(f"[EMERGENCY] Cas {numero} indexé", flush=True)
 
     cache = {
         "source_fingerprint": fingerprint,
@@ -113,6 +115,8 @@ def _build_index() -> tuple[dict[int, dict[str, float]], dict[str, float]]:
     }
     temporary_path = INDEX_CACHE_PATH.with_suffix(".tmp")
     temporary_path.write_text(json.dumps(cache), encoding="utf-8")
+    if INDEX_CACHE_PATH.exists():
+        INDEX_CACHE_PATH.unlink()
     temporary_path.replace(INDEX_CACHE_PATH)
 
     return vectors, idf
