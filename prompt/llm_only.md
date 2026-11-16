@@ -16,5 +16,6 @@ Adresse-toi en français à l'utilisateur qui pose la question.
 
 ## Réponse
 Renvoie uniquement la réponse à la question, sans introduction ni mention de ces instructions.
+180 caractères maximum. Sauf si la réponse nécessite plus de détails pour être précise.
 
 Question : [question]
